@@ -24,12 +24,11 @@ jobs:
           --health-retries 5
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-
-    - name: Configure Git Credentials
+    - name: Set up Python ${{ matrix.python-version }} and Configure Git Credentials
       run: |
         git config user.name github-actions[bot]
         git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
 
     - uses: actions/setup-python@v5
       with:
@@ -57,7 +56,6 @@ jobs:
       run: |
         poetry run coverage report
 
-    - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
     - uses: actions/cache@v4
       with:
         key: mkdocs-material-${{ env.cache_id }}
@@ -66,3 +64,4 @@ jobs:
           mkdocs-material-
     - run: pip install mkdocs-material
     - run: mkdocs gh-deploy --force
+
