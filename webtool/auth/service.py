@@ -36,14 +36,14 @@ class JWTService(BaseJWTService):
         self,
         cache: "BaseCache",
         jwt_manager: "BaseJWTManager" = JWTManager(),
+        secret_key: str = "",
         algorithm: str = ALGORITHMS.HS384,
-        secret_key: str = None,
         access_token_expire_time: int = 3600,
         refresh_token_expire_time: int = 604800,
     ):
         self._cache = cache
-        self._jwt_manager = jwt_manager
         self._secret_key = secret_key
+        self._jwt_manager = jwt_manager
         self.algorithm = algorithm
         self.access_token_expire_time = access_token_expire_time
         self.refresh_token_expire_time = refresh_token_expire_time

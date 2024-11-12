@@ -25,7 +25,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+
+    - name: Configure Git Credentials
+      run: |
+        git config user.name github-actions[bot]
+        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -50,3 +56,13 @@ jobs:
     - name: Generate coverage report
       run: |
         poetry run coverage report
+
+    - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+    - uses: actions/cache@v4
+      with:
+        key: mkdocs-material-${{ env.cache_id }}
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
+    - run: pip install mkdocs-material
+    - run: mkdocs gh-deploy --force
