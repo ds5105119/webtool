@@ -24,11 +24,8 @@ jobs:
           --health-retries 5
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }} and Configure Git Credentials
-      run: |
-        git config user.name ds5105119
-        git config user.email ds5105119@gmail.com
-          - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      with:
+        fetch-depth: 0
 
     - uses: actions/setup-python@v5
       with:
