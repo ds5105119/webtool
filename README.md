@@ -39,10 +39,24 @@ async def get_token():
 Rate limiting system for FastAPI/Starlette applications.
 
 ```python
-from webtool.throttle import limiter
 from fastapi import FastAPI
+from starlette.middleware import Middleware
+from webtool.auth import JWTService
+from webtool.cache import RedisCache
+from webtool.throttle import limiter, LimitMiddleware, JWTBackend
 
-app = FastAPI()
+cache = RedisCache("redis://127.0.0.1:6379/0")
+jwt_backend = JWTBackend(JWTService(cache, secret_key="test"))
+
+app = FastAPI(
+    middleware=[
+        Middleware(
+            LimitMiddleware,
+            cache=cache,
+            auth_backend=jwt_backend,
+        ),
+    ]
+)
 
 
 @app.get("/api/resource")
