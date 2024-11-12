@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "webtool"
-version = "0.0.2"
+version = "0.0.3"
 description = "FastAPI/Starlette library for authentication, throttling, caching."
 authors = ["IIH <ds5105119@gmail.com>"]
 readme = "README.md"
