@@ -1,6 +1,6 @@
 # WebTool
 
-Well-Architected Python library for authentication, throttling, caching, logging, and utilities.
+Well-Architected FastAPI/Starlette library for authentication, throttling, caching, logging, and utilities.
 
 ## Requirements
 
