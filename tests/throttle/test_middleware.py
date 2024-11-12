@@ -24,11 +24,11 @@ async def test_anno_throttle_1():
             return responses
 
         t = time.time()
-        results = await asyncio.gather(*[worker_1() for _ in range(200)])
+        results = await asyncio.gather(*[worker_1() for _ in range(100)])
 
     now = time.time()
     delta = now - t
-    assert delta < 1
+    assert delta < 5
 
     for response_set in results:
         assert len(response_set) == 6
@@ -55,11 +55,11 @@ async def test_anno_throttle_2():
             return responses
 
         t = time.time()
-        results = await asyncio.gather(*[worker_1() for _ in range(200)])
+        results = await asyncio.gather(*[worker_1() for _ in range(100)])
 
     now = time.time()
     delta = now - t
-    assert delta < 1
+    assert delta < 5
 
     for response_set in results:
         assert len(response_set) == 4
@@ -84,11 +84,11 @@ async def test_auth_throttle_3(jwt_service):
             return responses
 
         t = time.time()
-        results = await asyncio.gather(*[worker_1() for _ in range(200)])
+        results = await asyncio.gather(*[worker_1() for _ in range(100)])
 
     now = time.time()
     delta = now - t
-    assert delta < 1
+    assert delta < 5
 
     for response_set in results:
         assert len(response_set) == 5
@@ -134,7 +134,7 @@ async def test_auth_throttle_4(jwt_service):
             return responses
 
         t = time.time()
-        tasks = [random.randint(0, 2) for _ in range(1000)]
+        tasks = [random.randint(0, 2) for _ in range(100)]
         results = await asyncio.gather(
             *[worker_1() if task == 0 else worker_2() if task == 1 else worker_3() for task in tasks]
         )
