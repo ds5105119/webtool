@@ -4,6 +4,15 @@
 name = "annotated-types"
 version = "0.7.0"
 description = "Reusable constraint types to use with typing.Annotated"
+license = "Apache-2.0"
+authors = [
+    "IIH <ds5105119@gmail.com>",
+]
+maintainers = [
+    "IIH <ds5105119@gmail.com>",
+]
+repository = "https://github.com/ds5105119/webtool"
+keywords = ["fastapi", "starlette", "throttle", "cache", "utils"]
 optional = false
 python-versions = ">=3.8"
 files = [
