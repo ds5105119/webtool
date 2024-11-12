@@ -4,7 +4,7 @@ Well-Architected FastAPI/Starlette library for authentication, throttling, cachi
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 
 ## Installation
 
