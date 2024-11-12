@@ -1,0 +1,38 @@
+name: Python package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install build dependencies for requests in python 3.9
+      run: sudo apt-get install libxml2-dev libxslt-dev
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Install dependencies
+      run: |
+        poetry install
+    - name: Check formatting with black
+      run: |
+        poetry run ruff check
+    - name: Test with pytest
+      run: |
+        poetry run coverage run --omit="tests*" -m pytest
+    - name: Generate coverage report
+      run: |
+        poetry run coverage report
