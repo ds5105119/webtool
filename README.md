@@ -9,11 +9,11 @@ Well-Architected FastAPI/Starlette library for authentication, throttling, cachi
 ## Installation
 
 ```shell
-pip install webkit
+pip install webtool
 ```
 
 ```shell
-poetry add webkit
+poetry add webtool
 ```
 
 ## Features
@@ -55,7 +55,7 @@ app = FastAPI(
             cache=cache,
             auth_backend=jwt_backend,
         ),
-    ]
+    ],
 )
 
 
