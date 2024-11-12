@@ -1,4 +1,5 @@
 # WebTool(Alpha)
+<img src="https://github.com/ds5105119/webtool/workflows/CI/badge.svg">
 
 Well-Architected FastAPI/Starlette library for authentication, throttling, caching, logging, and utilities.
 
