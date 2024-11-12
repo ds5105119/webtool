@@ -1,7 +1,9 @@
-site_name: My Docs
+site_name: webtool
 
 theme:
   name: 'material'
+  logo: https://raw.githubusercontent.com/ds5105119/logo/refs/heads/main/logowithR%20square.png
+  favicon: https://raw.githubusercontent.com/ds5105119/logo/refs/heads/main/logo%20round.png
   features:
     - content.code.copy
     - content.code.select
