@@ -26,8 +26,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }} and Configure Git Credentials
       run: |
-        git config user.name github-actions[bot]
-        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+        git config user.name ds5105119
+        git config user.email ds5105119@gmail.com
           - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
 
     - uses: actions/setup-python@v5
