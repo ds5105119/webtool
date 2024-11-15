@@ -146,13 +146,13 @@ async def test_auth_throttle_4(jwt_service):
     for i, response_set in enumerate(results):
         if tasks[i] == 0:
             assert len(response_set) == 5
-            assert all([response.status_code == 200 for response in response_set[:-1]])
+            assert all(response.status_code for response in response_set[:-1])
             assert response_set[-1].status_code == 429
         elif tasks[i] == 1:
             assert len(response_set) == 5
-            assert all([response.status_code == 200 for response in response_set])
+            assert all(response.status_code == 200 for response in response_set)
         elif tasks[i] == 2:
             assert len(response_set) == 4
             assert response_set[0].status_code == 307
-            assert all([response.status_code == 200 for response in response_set[1:-1]])
+            assert all(response.status_code == 200 for response in response_set[1:-1])
             assert response_set[-1].status_code == 429

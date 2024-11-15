@@ -37,11 +37,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 lint.select = ["B", "C4", "E", "F", "N", "I", "W", "UP"]
-lint.ignore = ["F403","F405","E501","E402","B904"]
+lint.ignore = ["W293", "F403", "F405", "E501", "E402", "B904"]
 lint.fixable = ["A", "B", "C", "D", "E", "F", "I", "UP"]
 lint.unfixable = []
 lint.per-file-ignores = {}
 line-length = 120
+exclude = ["dev_*"]
 target-version = "py39"
 
 

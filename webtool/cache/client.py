@@ -233,7 +233,7 @@ class RedisCache(BaseCache):
         redis_url: str = None,
         connection_pool: Optional[ConnectionPool] = None,
         logger: logging.Logger = None,
-        config: RedisConfig = RedisConfig(),
+        config: RedisConfig | None = None,
     ):
         """
         Initializes the Redis client.
@@ -243,7 +243,7 @@ class RedisCache(BaseCache):
         """
 
         self.logger = logger or logging.getLogger(__name__)
-        self.config = config
+        self.config = config or RedisConfig()
 
         if connection_pool:
             self.connection_pool = connection_pool
@@ -258,7 +258,7 @@ class RedisCache(BaseCache):
         else:
             raise TypeError("RedisClient must be provided with either redis_dsn or connection_pool")
 
-        self.cache: "Redis" = Redis.from_pool(self.connection_pool)
+        self.cache: Redis = Redis.from_pool(self.connection_pool)
 
     def lock(
         self,

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import NotRequired, Optional, TypedDict
+from typing import Optional
 
 from jose import JWTError, jwt
 

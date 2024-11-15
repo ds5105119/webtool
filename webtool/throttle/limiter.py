@@ -73,10 +73,9 @@ class RedisLimiter(BaseLimiter):
         :return: Dictionary of {key: (max_requests, interval)}
         """
 
-        keys = map(lambda rule: identifier + rule.throttle_key, rules)
-        args = map(lambda rule: (rule.max_requests, rule.interval), rules)
+        ruleset = {identifier + rule.throttle_key: (rule.max_requests, rule.interval) for rule in rules}
 
-        return dict(zip(keys, args))
+        return ruleset
 
     async def _get_limits(self, ruleset) -> dict[str, list[int, int]]:
         """

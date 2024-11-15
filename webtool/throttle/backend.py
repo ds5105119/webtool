@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Literal, Optional, Tuple
+from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
 from webtool.auth.service import BaseJWTService
@@ -294,7 +294,7 @@ class JWTBackend(BaseBackend):
     @staticmethod
     def _get_authorization_scheme_param(
         authorization_header_value: Optional[str],
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Separates scheme and token from Authorization header.
 
@@ -338,7 +338,7 @@ class JWTBackend(BaseBackend):
         :return: Validated token data or None
         """
 
-        validated_token = self.jwt_service.check_access_token_expired(access_token=token)
+        validated_token = self.jwt_service.validate_access_token(token)
 
         if validated_token is None:
             return None

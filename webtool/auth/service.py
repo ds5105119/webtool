@@ -55,7 +55,7 @@ class JWTService(BaseJWTService):
     def __init__(
         self,
         cache: "BaseCache",
-        jwt_manager: "BaseJWTManager" = JWTManager(),
+        jwt_manager: BaseJWTManager | None = None,
         secret_key: str = "",
         algorithm: str = ALGORITHMS.HS384,
         access_token_expire_time: int = 3600,
@@ -63,7 +63,7 @@ class JWTService(BaseJWTService):
     ):
         self._cache = cache
         self._secret_key = secret_key
-        self._jwt_manager = jwt_manager
+        self._jwt_manager = jwt_manager or JWTManager()
         self._json_encoder = msgspec.json.Encoder()
         self._json_decoder = msgspec.json.Decoder()
         self.algorithm = algorithm
@@ -217,26 +217,26 @@ class JWTService(BaseJWTService):
 
 
 class RedisJWTService(JWTService):
-    _LUA_SAVE_TOKEN_SCRIPT = f"""
+    _LUA_SAVE_TOKEN_SCRIPT = """
     -- PARAMETERS
     local refresh_token = KEYS[1]
     local now = ARGV[1]
     local access_jti = ARGV[2]
     local refresh_token_expire_time = ARGV[3]
-    
+        
     -- REFRESH TOKEN DATA EXTRACTION
     refresh_token = cjson.decode(refresh_token)
     local refresh_exp = refresh_token['exp']
     local refresh_sub = refresh_token['sub']
     local refresh_jti = refresh_token['jti']
     local refresh_val = refresh_token['extra']
-    
+        
     -- SAVE REFRESH TOKEN FOR VALIDATION
     local key = "jwt_" .. refresh_jti
     refresh_val['access_jti'] = access_jti
     refresh_val = cjson.encode(refresh_val)
     redis.call('SET', key, refresh_val, 'EXAT', math.floor(refresh_exp))
-    
+        
     -- SAVE REFRESH TOKEN FOR SEARCH
     key = "jwt_sub_" .. refresh_sub
     redis.call('ZADD', key, now, access_jti)
@@ -267,27 +267,27 @@ class RedisJWTService(JWTService):
     local now = tonumber(ARGV[1])
     local access_token_expire_time = tonumber(ARGV[2])
     local refresh_token_expire_time = tonumber(ARGV[3])
-    
+        
     -- REFRESH TOKEN DATA EXTRACTION
     refresh_token = cjson.decode(refresh_token)
     local refresh_jti = refresh_token['jti']
     local refresh_sub = refresh_token['sub']
     local refresh_exp = tonumber(refresh_token['exp'])
-    
+        
     -- VALIDATE REFRESH TOKEN
     local key = "jwt_" .. refresh_jti
     local refresh_val = redis.call('GET', key)
-    
+        
     if not refresh_val then
         return 0
     end
-    
+        
     -- READ REFRESH TOKEN DATA
     local decoded_val = cjson.decode(refresh_val)
     
     -- DELETE REFRESH TOKEN DATA FOR VALIDATION
     key = "jwt_" .. refresh_jti
-    redis.call('DEL', key) 
+    redis.call('DEL', key)
     
     -- DELETE REFRESH TOKEN DATA FOR SEARCH
     key = "jwt_sub_" .. refresh_sub
@@ -325,7 +325,7 @@ class RedisJWTService(JWTService):
     def __init__(
         self,
         cache: "RedisCache",
-        jwt_manager: "BaseJWTManager" = JWTManager(),
+        jwt_manager: BaseJWTManager | None = None,
         secret_key: str = "123",
         algorithm: str = ALGORITHMS.HS384,
         access_token_expire_time: int = 3600,
