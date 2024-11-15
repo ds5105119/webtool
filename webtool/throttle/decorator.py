@@ -91,7 +91,15 @@ class LimitRule:
     - User scopes (optional)
     """
 
-    __slots__ = ("throttle_key", "max_requests", "interval", "method", "scope", "for_user", "for_anno")
+    __slots__ = (
+        "throttle_key",
+        "max_requests",
+        "interval",
+        "method",
+        "scope",
+        "for_user",
+        "for_anno",
+    )
 
     def __init__(
         self,

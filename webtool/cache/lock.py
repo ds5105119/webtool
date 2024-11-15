@@ -18,7 +18,14 @@ class BaseLock(ABC):
 
 
 class AsyncRedisLock(BaseLock):
-    __slots__ = "_client", "_key", "_ttl", "_blocking", "_blocking_timeout", "_blocking_sleep"
+    __slots__ = (
+        "_client",
+        "_key",
+        "_ttl",
+        "_blocking",
+        "_blocking_timeout",
+        "_blocking_sleep",
+    )
 
     def __init__(
         self,
@@ -49,7 +56,7 @@ class AsyncRedisLock(BaseLock):
         start_time = asyncio.get_running_loop().time()
 
         while True:
-            lock_acquired = await self._client.cache.set(self._key, b"locked", px=self._ttl, nx=True)
+            lock_acquired = await self._client.cache.set(self._key, 1, px=self._ttl, nx=True)
             if lock_acquired:
                 return True
 
@@ -68,10 +75,9 @@ class AsyncRedisLock(BaseLock):
         await self._client.cache.delete(self._key)
 
     async def __aenter__(self):
-        acquired = await self.acquire()
-        if not acquired:
-            raise TimeoutError
-        return self
+        if await self.acquire():
+            return self
+        raise TimeoutError
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.release()

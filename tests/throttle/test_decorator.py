@@ -1,4 +1,8 @@
-from webtool.throttle.decorator import THROTTLE_RULE_ATTR_NAME, find_closure_rules_function, limiter
+from webtool.throttle.decorator import (
+    THROTTLE_RULE_ATTR_NAME,
+    find_closure_rules_function,
+    limiter,
+)
 
 
 def test_decorator():

@@ -26,7 +26,7 @@ class RedisLimiter(BaseLimiter):
     Rate limiter implementation using Redis for distributed rate limiting.
     """
 
-    LUA_SCRIPT = """
+    _LUA_LIMITER_SCRIPT = """
     -- Retrieve arguments
     -- ruleset = {key: [limit, window_size], ...}
     -- return = {key: [limit, current], ...}
@@ -61,7 +61,7 @@ class RedisLimiter(BaseLimiter):
         """
 
         self._cache = redis_cache.cache
-        self._redis_function = self._cache.register_script(RedisLimiter.LUA_SCRIPT)
+        self._redis_function = self._cache.register_script(RedisLimiter._LUA_LIMITER_SCRIPT)
 
     @staticmethod
     def _get_ruleset(identifier: str, rules: list[LimitRule]) -> dict[str, tuple[int, int]]:

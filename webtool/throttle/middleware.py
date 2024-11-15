@@ -3,7 +3,12 @@ from typing import Callable, Iterable, Optional
 from starlette.routing import BaseRoute, Match
 
 from webtool.throttle.backend import AnnoSessionBackend, BaseAnnoBackend, BaseBackend
-from webtool.throttle.decorator import THROTTLE_RULE_ATTR_NAME, LimitRule, LimitRuleManager, find_closure_rules_function
+from webtool.throttle.decorator import (
+    THROTTLE_RULE_ATTR_NAME,
+    LimitRule,
+    LimitRuleManager,
+    find_closure_rules_function,
+)
 from webtool.throttle.limiter import RedisLimiter
 
 

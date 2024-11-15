@@ -1,9 +1,10 @@
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Optional, Union
+from typing import Any, Optional, Union
 
 from redis.asyncio.client import Redis
 from redis.asyncio.connection import ConnectionPool
@@ -38,15 +39,16 @@ class BaseCache(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def safe_set(
+    async def set(
         self,
         key: Union[bytes, str, memoryview],
         value: Union[bytes, memoryview, str, int, float],
         ex: Union[int, timedelta, None] = None,
         exat: Union[int, datetime, None] = None,
-    ) -> Union[Awaitable, Any]:
+        nx: bool = False,
+    ) -> Any:
         """
-        Safely sets a key-value pair in Redis.
+        sets a key-value pair.
 
         :param key: The key for the data to be set.
         :param value: The value associated with the key.
@@ -59,15 +61,31 @@ class BaseCache(ABC):
         """
         raise NotImplementedError
 
-    async def safe_get(
+    @abstractmethod
+    async def get(
         self,
         key: Union[bytes, str, memoryview],
-    ) -> Union[Awaitable, Any]:
+    ) -> Any:
         """
-        Safely gets a key-value pair in Redis.
+        gets a key-value pair.
 
         :param key: The key for the data to be set.
         :return: return of get.
+
+        :raises NotImplementedError: If the method is not implemented in a subclass.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete(
+        self,
+        key: Union[bytes, str, memoryview],
+    ) -> Any:
+        """
+        deletes a key-value pair.
+
+        :param key: The key for the data to be set.
+        :return: None
 
         :raises NotImplementedError: If the method is not implemented in a subclass.
         """
@@ -82,6 +100,87 @@ class BaseCache(ABC):
         """
 
         raise NotImplementedError
+
+
+class InMemoryCache(BaseCache):
+    """
+    Implementation of a InMemory client.
+    DO NOT USE IN PRODUCTION
+    """
+
+    def __init__(self):
+        self.cache: dict = {}
+        self.connection_pool = None
+        self._lock = {}
+
+    async def _expire(self) -> None:
+        now = asyncio.get_event_loop().time()
+        self.cache = {k: v for k, v in self._lock.items() if v[1] > now}
+
+    async def lock(
+        self,
+        key: Union[bytes, str, memoryview],
+        ttl_ms: Union[int, timedelta, None] = 100,
+        blocking: bool = True,
+        blocking_timeout: float = DEFAULT_CAP,
+        blocking_sleep: float = DEFAULT_BASE,
+    ) -> BaseLock:
+        now = asyncio.get_running_loop().time()
+        self._lock = {k: v for k, v in self._lock.items() if v[1] > now}
+
+        if key not in self._lock:
+            now = asyncio.get_event_loop().time()
+            self._lock[key] = (asyncio.Lock(), now + ttl_ms / 1000)
+
+        return self._lock[key]
+
+    async def set(
+        self,
+        key: Union[bytes, str, memoryview],
+        value: Union[bytes, memoryview, str, int, float],
+        ex: Union[int, timedelta, None] = None,
+        exat: Union[int, datetime, None] = None,
+        nx: bool = False,
+    ) -> Any:
+        await self._expire()
+        if nx and self.cache.get(key):
+            return None
+
+        if ex:
+            now = asyncio.get_running_loop().time()
+            if isinstance(ex, int):
+                exp = now + ex
+            else:
+                exp = now + ex.total_seconds()
+        else:
+            if isinstance(exat, int):
+                exp = exat
+            elif isinstance(exat, datetime):
+                exp = exat.timestamp()
+            else:
+                exp = float("inf")
+
+        self.cache[key] = (value, exp)
+        return self.cache[key]
+
+    async def get(
+        self,
+        key: Union[bytes, str, memoryview],
+    ) -> Any:
+        val = self.cache.get(key)
+        if val:
+            return val[0]
+        return None
+
+    async def delete(
+        self,
+        key: Union[bytes, str, memoryview],
+    ) -> Any:
+        return self.cache.pop(key)
+
+    async def aclose(self) -> None:
+        self.cache.clear()
+        self._lock.clear()
 
 
 @dataclass(frozen=True)
@@ -159,7 +258,7 @@ class RedisCache(BaseCache):
         else:
             raise TypeError("RedisClient must be provided with either redis_dsn or connection_pool")
 
-        self.cache = Redis.from_pool(self.connection_pool)
+        self.cache: "Redis" = Redis.from_pool(self.connection_pool)
 
     def lock(
         self,
@@ -171,24 +270,27 @@ class RedisCache(BaseCache):
     ) -> AsyncRedisLock:
         return AsyncRedisLock(self, key, ttl_ms, blocking, blocking_timeout, blocking_sleep)
 
-    async def safe_set(
+    async def set(
         self,
         key: Union[bytes, str, memoryview],
         value: Union[bytes, memoryview, str, int, float],
         ex: Union[int, timedelta, None] = None,
         exat: Union[int, datetime, None] = None,
-        ttl_ms: Union[int, timedelta, None] = 10,
-    ) -> Union[Awaitable, Any]:
-        async with self.lock(key, ttl_ms, True):
-            return await self.cache.set(key, value, ex=ex, exat=exat, nx=True)
+        nx: bool = False,
+    ) -> Any:
+        return await self.cache.set(key, value, ex=ex, exat=exat, nx=nx)
 
-    async def safe_get(
+    async def get(
         self,
         key: Union[bytes, str, memoryview],
-        ttl_ms: Union[int, timedelta, None] = 10,
-    ) -> Union[Awaitable, Any]:
-        async with self.lock(key, ttl_ms, True):
-            return await self.cache.get(key)
+    ) -> Any:
+        return await self.cache.get(key)
+
+    async def delete(
+        self,
+        key: Union[bytes, str, memoryview],
+    ) -> Any:
+        return await self.cache.delete(key)
 
     async def aclose(self) -> None:
         self.logger.info(f"Closing Redis client connection (id: {id(self)})")

@@ -4,14 +4,6 @@ from typing import NotRequired, Optional, TypedDict
 from jose import JWTError, jwt
 
 
-class TokenData(TypedDict):
-    sub: str
-    exp: float
-    iat: float
-    jti: str
-    scope: NotRequired[list[str]]
-
-
 class BaseJWTManager(ABC):
     """
     Abstract base class for managing JSON Web Tokens (JWT).
@@ -19,7 +11,13 @@ class BaseJWTManager(ABC):
     """
 
     @abstractmethod
-    def encode(self, claims: TokenData, secret_key: str, algorithm: str, access_token: Optional[str] = None) -> str:
+    def encode(
+        self,
+        claims: dict,
+        secret_key: str,
+        algorithm: str,
+        access_token: Optional[str] = None,
+    ) -> str:
         """
         Encodes the specified claims into a JSON Web Token (JWT).
 
@@ -37,8 +35,12 @@ class BaseJWTManager(ABC):
 
     @abstractmethod
     def decode(
-        self, token: str, secret_key: str, algorithm: str, access_token: Optional[str] = None
-    ) -> TokenData | None:
+        self,
+        token: str,
+        secret_key: str,
+        algorithm: str,
+        access_token: Optional[str] = None,
+    ) -> dict | None:
         """
         Decodes a JSON Web Token (JWT) and validates its claims.
 
@@ -61,7 +63,13 @@ class JWTManager(BaseJWTManager):
     JWT manager for encoding and decoding JSON Web Tokens.
     """
 
-    def encode(self, claims: TokenData, secret_key: str, algorithm: str, access_token: Optional[str] = None) -> str:
+    def encode(
+        self,
+        claims: dict,
+        secret_key: str,
+        algorithm: str,
+        access_token: Optional[str] = None,
+    ) -> str:
         """
         Encodes the specified claims into a JSON Web Token (JWT) with a specified expiration time.
         :param claims: A dictionary containing the claims to be included in the JWT.
@@ -75,8 +83,12 @@ class JWTManager(BaseJWTManager):
         return jwt.encode(claims, secret_key, algorithm=algorithm, access_token=access_token)
 
     def decode(
-        self, token: str, secret_key: str, algorithm: str, access_token: Optional[str] = None
-    ) -> TokenData | None:
+        self,
+        token: str,
+        secret_key: str,
+        algorithm: str,
+        access_token: Optional[str] = None,
+    ) -> dict | None:
         """
         Decodes a JSON Web Token (JWT) and returns the claims if valid.
 
@@ -111,6 +123,12 @@ class JWTManager(BaseJWTManager):
                 "leeway": 0,
             }
 
-            return jwt.decode(token, secret_key, algorithms=[algorithm], options=options, access_token=access_token)
+            return jwt.decode(
+                token,
+                secret_key,
+                algorithms=[algorithm],
+                options=options,
+                access_token=access_token,
+            )
         except JWTError:
             return None
