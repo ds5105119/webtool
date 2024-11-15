@@ -45,7 +45,7 @@ class BaseBackend(ABC):
     """
 
     @abstractmethod
-    def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> Any | None:
         """
         Performs authentication using the request scope.
 
@@ -106,7 +106,7 @@ class IPBackend(BaseBackend):
     Authentication backend based on IP address
     """
 
-    def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> Any | None:
         """
         Performs authentication using the client's IP address.
 
@@ -183,7 +183,7 @@ class SessionBackend(BaseBackend):
 
         return session
 
-    def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> Any | None:
         """
         Performs authentication using session information.
 
@@ -330,7 +330,7 @@ class JWTBackend(BaseBackend):
 
         return scheme, param
 
-    def validate_token(self, token):
+    async def validate_token(self, token):
         """
         Validates JWT.
 
@@ -338,14 +338,14 @@ class JWTBackend(BaseBackend):
         :return: Validated token data or None
         """
 
-        validated_token = self.jwt_service.validate_access_token(token)
+        validated_token = await self.jwt_service.validate_access_token(token)
 
         if validated_token is None:
             return None
 
         return validated_token
 
-    def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> Any | None:
         """
         Performs authentication using JWT.
 
@@ -357,7 +357,7 @@ class JWTBackend(BaseBackend):
         if token_data is None:
             return self._callback()
 
-        validated_token = self.validate_token(token_data[1])
+        validated_token = await self.validate_token(token_data[1])
         if validated_token is None:
             return self._callback()
 

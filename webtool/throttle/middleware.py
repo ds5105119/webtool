@@ -108,7 +108,7 @@ class LimitMiddleware:
         manager: LimitRuleManager = getattr(handler, THROTTLE_RULE_ATTR_NAME)
 
         # auth check
-        user_data = self.auth_backend.authenticate(scope)
+        user_data = await self.auth_backend.authenticate(scope)
         if user_data is not None:
             identifier = self.auth_backend.get_identifier(user_data)
             user_scope = self.auth_backend.get_scope(user_data)
@@ -116,7 +116,7 @@ class LimitMiddleware:
             return await self.apply(scope, receive, send, identifier, rules)
 
         # anno check
-        anno_data = self.anno_backend.authenticate(scope)
+        anno_data = await self.anno_backend.authenticate(scope)
         if anno_data is not None:
             identifier = self.anno_backend.get_identifier(anno_data)
             anno_scope = self.anno_backend.get_scope(anno_data)

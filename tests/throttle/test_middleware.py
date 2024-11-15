@@ -75,7 +75,7 @@ async def test_auth_throttle_3(jwt_service):
 
         async def worker_1():
             token_data = {"sub": uuid4().hex}
-            access_token = jwt_service.create_access_token(token_data)
+            access_token, _ = await jwt_service.create_token(token_data)
 
             responses = []
             for _ in range(5):
@@ -105,7 +105,7 @@ async def test_auth_throttle_4(jwt_service):
 
         async def worker_1():
             token_data = {"sub": uuid4().hex, "scope": ["write"]}
-            access_token = jwt_service.create_access_token(token_data)
+            access_token, _ = await jwt_service.create_token(token_data)
 
             responses = []
             for _ in range(5):
@@ -115,7 +115,7 @@ async def test_auth_throttle_4(jwt_service):
 
         async def worker_2():
             token_data = {"sub": uuid4().hex, "scope": ["read"]}
-            access_token = jwt_service.create_access_token(token_data)
+            access_token, _ = await jwt_service.create_token(token_data)
 
             responses = []
             for _ in range(5):
