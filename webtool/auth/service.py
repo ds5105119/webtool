@@ -91,7 +91,7 @@ class JWTService(BaseJWTService):
 
     @staticmethod
     def _get_key(validated_data: TokenData) -> str:
-        return f"{JWTService._CACHE_TOKEN_PREFIX}{validated_data.get("jti")}"
+        return f"{JWTService._CACHE_TOKEN_PREFIX}{validated_data.get('jti')}"
 
     @staticmethod
     def _create_jti() -> str:
