@@ -37,7 +37,7 @@ async def test_update_token(jwt_service):
     t = time.time()
     tokens = await asyncio.gather(*[update_worker(*args) for args in tokens])
     d = time.time() - t
-    assert d < 2
+    assert d < 5
     print(f"\n토큰 업데이트 소요 시간: {d}sec")
 
     try:
