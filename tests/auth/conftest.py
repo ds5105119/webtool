@@ -1,6 +1,6 @@
 import pytest_asyncio
 
-from webtool.auth import JWTService, RedisJWTService
+from webtool.auth import RedisJWTService
 from webtool.cache import RedisCache
 
 
