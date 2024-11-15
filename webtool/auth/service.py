@@ -150,7 +150,7 @@ class JWTService(BaseJWTService):
     async def _invalidate_token_data(self, refresh_data: TokenData) -> None:
         refresh_exp = self._get_exp(refresh_data)
         refresh_db_data = await self._read_token_data(refresh_data)
-        access_key = f"{JWTService._CACHE_INVALIDATE_PREFIX}{refresh_db_data.get("access_jti")}"
+        access_key = f"{JWTService._CACHE_INVALIDATE_PREFIX}{refresh_db_data.get('access_jti')}"
         access_exp = refresh_exp - self.refresh_token_expire_time + self.access_token_expire_time
         now = time.time()
 
