@@ -6,34 +6,23 @@ import pytest
 
 
 @pytest.mark.asyncio(scope="session")
-async def test_create_access_token(jwt_service):
+async def test_create_token(jwt_service):
     token_data = {"sub": "user123"}
-    access_token = jwt_service.create_access_token(token_data)
-    assert access_token
-
-
-@pytest.mark.asyncio(scope="session")
-async def test_create_refresh_token(jwt_service):
-    token_data = {"sub": "user123"}
-    access_token = jwt_service.create_access_token(token_data)
-    refresh_token = await jwt_service.create_refresh_token(token_data, access_token)
-    assert refresh_token
+    tokens = await jwt_service.create_token(token_data)
+    assert tokens
 
 
 @pytest.mark.asyncio(scope="session")
 async def test_update_token(jwt_service):
     token_data = {"sub": uuid4().hex}
 
-    access_token = jwt_service.create_access_token(token_data)
-    refresh_token = await jwt_service.create_refresh_token(token_data, access_token)
-
+    access_token, refresh_token = await jwt_service.create_token(token_data)
     new_access_token, new_refresh_token = await jwt_service.update_token(token_data, access_token, refresh_token)
     time.sleep(1)
 
     async def create_worker():
         data = {"sub": uuid4().hex}
-        access = jwt_service.create_access_token(data)
-        refresh = await jwt_service.create_refresh_token(data, access)
+        access, refresh = await jwt_service.create_token(token_data)
         return data, access, refresh
 
     async def update_worker(data, access, refresh):

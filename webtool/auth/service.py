@@ -134,7 +134,7 @@ class JWTService(BaseJWTService):
         val = self._json_encoder.encode(val)
 
         async with self._cache.lock(key, 100):
-            await self._cache.set(key, val, exat=self.refresh_token_expire_time)
+            await self._cache.set(key, val, ex=self.refresh_token_expire_time)
 
     async def _read_token_data(self, refresh_data: TokenData) -> TokenData | None:
         key = self._get_key(refresh_data)
@@ -207,12 +207,17 @@ class JWTService(BaseJWTService):
         return True
 
     async def update_token(self, data: dict, access_token: str, refresh_token: str) -> tuple[str, str] | None:
-        refresh_invalidated = await self.invalidate_token(access_token, refresh_token)
+        refresh_data = await self.validate_refresh_token(access_token, refresh_token)
 
-        if not refresh_invalidated:
+        if not refresh_data:
             return None
 
-        new_access_token, new_refresh_token = await self.create_token(data)
+        await self._invalidate_token_data(refresh_data)
+
+        refresh_jti = self._get_jti(refresh_data)
+        async with self._cache.lock(refresh_jti, 100):
+            new_access_token, new_refresh_token = await self.create_token(data)
+
         return new_access_token, new_refresh_token
 
 
@@ -243,7 +248,7 @@ class RedisJWTService(JWTService):
     redis.call("EXPIRE", key, refresh_token_expire_time)
     """
 
-    LUA_READ_TOKEN_SCRIPT = """
+    _LUA_READ_TOKEN_SCRIPT = """
     -- PARAMETERS
     local sub = KEYS[1]
     local now = tonumber(ARGV[1])

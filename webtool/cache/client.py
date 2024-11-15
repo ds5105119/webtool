@@ -251,7 +251,7 @@ class RedisCache(BaseCache):
             kwargs = self.config.to_dict()
             kwargs.update(
                 {
-                    "retry": deepcopy(config.retry),
+                    "retry": deepcopy(self.config.retry),
                 }
             )
             self.connection_pool = ConnectionPool.from_url(redis_url, **kwargs)
