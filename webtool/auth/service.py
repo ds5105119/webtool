@@ -1,7 +1,7 @@
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import Any, NotRequired, Optional, TypedDict, override
+from typing import Any, NotRequired, Optional, TypedDict
 from uuid import uuid4
 
 import msgspec
@@ -341,7 +341,6 @@ class RedisJWTService(JWTService):
         self._invalidate_script = self._cache.cache.register_script(RedisJWTService._LUA_INVALIDATE_TOKEN_SCRIPT)
         self._search_script = self._cache.cache.register_script(RedisJWTService._LUA_SEARCH_TOKEN_SCRIPT)
 
-    @override
     async def _save_token_data(self, access_data: TokenData, refresh_data: TokenData) -> None:
         access_jti = self._get_jti(access_data)
         refresh_jti = self._get_jti(refresh_data)
@@ -357,7 +356,6 @@ class RedisJWTService(JWTService):
                 ],
             )
 
-    @override
     async def _invalidate_token_data(self, refresh_data: TokenData) -> bool:
         refresh_json = self._json_encoder.encode(refresh_data)
 
