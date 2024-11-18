@@ -1,6 +1,6 @@
 # WebTool(Alpha)
 
-FastAPI/Starlette를 위한 JWT인증 및 스로틀링, 캐싱, 로깅 등을 위한 라이브러리.
+WebTool은 FastAPI/Starlette에서 JWT인증 및 스로틀링, 캐싱, 로깅 등을 사용하기 위한 라이브러리입니다. 
 
 ## 요구 사항
 
