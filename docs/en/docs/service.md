@@ -64,7 +64,7 @@ cache = RedisCache("redis://localhost:6379/0")
 redis_jwt_service = RedisJWTService(cache, secret_key="your_secret_key")
 
 async def manage_tokens():
-    user_data = {"sub": "user123"}
+    user_data = {"sub": "user1234"}
     access, refresh = await redis_jwt_service.create_token(user_data)
     print("Access Token:", access)
     print("Refresh Token:", refresh)
@@ -82,6 +82,14 @@ async def manage_tokens():
     print("New Refresh Token:", new_refresh)
     
     # Search active tokens
+    access_2, refresh_2 = await redis_jwt_service.create_token(user_data)
+    active_tokens = await redis_jwt_service.search_token(new_access, new_refresh)
+    print("Active Refresh Tokens:", active_tokens)
+    
+    # You can invalidate your tokens (Invalidate access_2, refresh_2)
+    await redis_jwt_service.invalidate_token(new_access, new_refresh, active_tokens[1])
+    await redis_jwt_service.invalidate_token(new_access, new_refresh)
+    
     active_tokens = await redis_jwt_service.search_token(new_access, new_refresh)
     print("Active Refresh Tokens:", active_tokens)
 
