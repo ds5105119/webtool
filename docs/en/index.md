@@ -30,9 +30,8 @@ jwt_service = JWTService(cache_client)
 
 
 async def get_token():
-    access_token = jwt_service.create_access_token({"sub": 123, "scope": ["write"]})
-    refresh_token = await jwt_service.create_refresh_token({"sub": 123}, access_token)
-    return access_token, refresh_token
+    access, refresh = jwt_service.create_token({"sub": 123, "scope": ["write"]})
+    return access, refresh
 ```
 
 ### Throttling
@@ -60,8 +59,8 @@ app = FastAPI(
 
 
 @app.get("/api/resource")
-@limiter(max_requests=50, interval=3600, scope=["user"])
-@limiter(max_requests=10, interval=3600, scope=["anno"])
+@limiter(max_requests=50, interval=3600, scopes=["user"])
+@limiter(max_requests=10, interval=3600, scopes=["anno"])
 async def get_resource():
     return {"status": "success"}
 ```

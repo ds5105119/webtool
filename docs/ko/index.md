@@ -1,6 +1,6 @@
 # WebTool(Alpha)
 
-Webtool은 FastAPI/Starlette를 위한 JWT인증 및 스로틀링, 캐싱, 로깅 등을 위한 라이브러리입니다.
+FastAPI/Starlette를 위한 JWT인증 및 스로틀링, 캐싱, 로깅 등을 위한 라이브러리.
 
 ## 요구 사항
 
@@ -19,8 +19,7 @@ poetry add webtool
 ## 기능
 
 ### JWT 인증
-Redis 또는 InMemory Cache 백엔드를 사용한 RTR구조의 
-JWT token management system with Redis-backed refresh tokens.
+Redis 또는 InMemory Cache 백엔드를 사용하여 RTR전략으로 access token과 refresh token을 관리할 수 있습니다.
 
 ```python
 from webtool.auth import JWTService
@@ -31,13 +30,12 @@ jwt_service = JWTService(cache_client)
 
 
 async def get_token():
-    access_token = jwt_service.create_access_token({"sub": 123, "scope": ["write"]})
-    refresh_token = await jwt_service.create_refresh_token({"sub": 123}, access_token)
-    return access_token, refresh_token
+    access, refresh = jwt_service.create_token({"sub": 123, "scopes": ["write"]})
+    return access, refresh
 ```
 
-### Throttling
-Rate limiting system for FastAPI/Starlette applications.
+### 스로틀링
+FastAPI/Starlette 어플리케이션에서 스로틀링을 적용할 수 있습니다.
 
 ```python
 from fastapi import FastAPI
@@ -61,14 +59,14 @@ app = FastAPI(
 
 
 @app.get("/api/resource")
-@limiter(max_requests=50, interval=3600, scope=["user"])
-@limiter(max_requests=10, interval=3600, scope=["anno"])
+@limiter(max_requests=50, interval=3600, scopes=["user"])
+@limiter(max_requests=10, interval=3600, scopes=["anno"])
 async def get_resource():
     return {"status": "success"}
 ```
 
-### MsgPack Response
-MessagePack-based response.
+### MsgPack 응답
+MessagePack-based 응답.
 
 ```python
 from webtool.utils import MsgSpecJSONResponse
@@ -84,6 +82,6 @@ async def get_resource():
     return {"status": "success"}
 ```
 
-## License
+## 라이선스
 
 This project is licensed under the Apache-2.0 License.
