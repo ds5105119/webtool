@@ -18,7 +18,7 @@
     
     
       
-        <title>Auth - service - webtool</title>
+        <title>Auth - Service - webtool</title>
       
     
     
@@ -105,7 +105,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Auth - service
+              Auth - Service
             
           </span>
         </div>
@@ -326,7 +326,7 @@
           
   
   <span class="md-ellipsis">
-    Auth - service
+    Auth - Service
   </span>
   
 
@@ -337,7 +337,7 @@
         
   
   <span class="md-ellipsis">
-    Auth - service
+    Auth - Service
   </span>
   
 
@@ -387,9 +387,51 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#usage-example" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
+      Usage Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redisjwtservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      RedisJWTService
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RedisJWTService">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lua Scripts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Example
     </span>
   </a>
   
@@ -471,9 +513,51 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#usage-example" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
+      Usage Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redisjwtservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      RedisJWTService
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RedisJWTService">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lua-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lua Scripts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Example
     </span>
   </a>
   
@@ -499,40 +583,83 @@
                   
 
 
-<h1 id="auth-service">Auth - service</h1>
+<h1 id="auth-service">Auth - Service</h1>
 <h2 id="jwtservice">JWTService</h2>
-<p>The <code>JWTService</code> class is responsible for generating and managing access tokens and refresh tokens using JSON Web Tokens (JWT). It provides an abstraction layer over the <code>BaseJWTManager</code> implementation, which is responsible for encoding and decoding the JWT tokens.</p>
+<p>The JWTService class provides an abstraction for managing JSON Web Tokens (JWT), including creation, validation, and invalidation of both access and refresh tokens. Designed for flexibility, it supports multiple caching backends via the BaseCache interface and enables extensibility for custom JWT handling with BaseJWTManager.</p>
 <h3 id="parameters">Parameters</h3>
-<p>The <code>JWTService</code> class can be instantiated with the following parameters:</p>
-<ul>
-<li><code>cache</code>: An instance of <code>BaseCache</code> that will be used to store the refresh tokens.</li>
-<li><code>jwt_manager</code>: An instance of <code>BaseJWTManager</code> (or its subclass <code>JWTManager</code>) that will be used for token encoding and decoding.</li>
-<li><code>secret_key</code>: The secret key used to sign the JWT tokens.</li>
-<li><code>algorithm</code>: The signing algorithm to use for the JWT tokens, defaults to 'HS384'.</li>
-<li><code>access_token_expire_time</code>: The expiration time for access tokens in seconds, defaults to 3600 (1 hour).</li>
-<li><code>refresh_token_expire_time</code>: The expiration time for refresh tokens in seconds, defaults to 604800 (1 week).</li>
-</ul>
+<p>The class accepts the following configuration during initialization:
+- <code>cache</code>: An instance of BaseCache, used for managing token-related data storage. 
+- <code>jwt_manager</code> (optional): An instance of BaseJWTManager (or its subclass). Defaults to JWTManager. 
+- <code>secret_key</code>: A secret key for signing JWT tokens. 
+- <code>algorithm</code>: The signing algorithm. Defaults to HS384. 
+- <code>access_token_expire_time</code>: Expiration time for access tokens in seconds. Default: 3600 seconds (1 hour). 
+- <code>refresh_token_expire_time</code>: Expiration time for refresh tokens in seconds. Default: 604800 seconds (1 week).</p>
 <h3 id="features">Features</h3>
 <ul>
-<li><strong>Access Token Generation</strong>: The <code>JWTService</code> can create access tokens with a configurable expiration time.</li>
-<li><strong>Refresh Token Generation</strong>: The service can create refresh tokens with a configurable expiration time and store them in a cache.</li>
-<li><strong>Token Validation</strong>: The service can validate the access tokens and refresh tokens, checking for expiration and other token metadata.</li>
-<li><strong>Token Refresh</strong>: The service can update the access token and refresh token when the refresh token is still valid.</li>
+<li>Access Token Management: Create and validate short-lived access tokens. </li>
+<li>Refresh Token Management: Generate refresh tokens, store metadata in a cache, and validate them. </li>
+<li>Token Invalidation: Support for securely invalidating tokens to prevent further use. </li>
+<li>Token Updates: Enable <strong>Refresh Token Rotation</strong>(RTR).</li>
+<li>Customizability: Use the BaseJWTService interface to create tailored implementations for unique requirements.</li>
 </ul>
-<h3 id="usage">Usage</h3>
+<h3 id="usage-example">Usage Example</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">webtool.auth</span> <span class="kn">import</span> <span class="n">JWTService</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">webtool.cache</span> <span class="kn">import</span> <span class="n">RedisCache</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">cache</span> <span class="o">=</span> <span class="n">RedisCache</span><span class="p">(</span><span class="s2">&quot;redis://localhost:6379/0&quot;</span><span class="p">)</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">jwt_service</span> <span class="o">=</span> <span class="n">JWTService</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">secret_key</span><span class="o">=</span><span class="s2">&quot;your_secret_key&quot;</span><span class="p">)</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">get_token</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">access_token</span> <span class="o">=</span> <span class="n">jwt_service</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">refresh_token</span> <span class="o">=</span> <span class="k">await</span> <span class="n">jwt_service</span><span class="o">.</span><span class="n">create_refresh_token</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">access_token</span><span class="p">)</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="k">return</span> <span class="n">access_token</span><span class="p">,</span> <span class="n">refresh_token</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">access</span><span class="p">,</span> <span class="n">refresh</span> <span class="o">=</span> <span class="n">get_token</span><span class="p">({</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user123&quot;</span><span class="p">,</span> <span class="s2">&quot;scope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;write&quot;</span><span class="p">]})</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">create_tokens</span><span class="p">():</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user123&quot;</span><span class="p">}</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">access</span><span class="p">,</span> <span class="n">refresh</span> <span class="o">=</span> <span class="k">await</span> <span class="n">jwt_service</span><span class="o">.</span><span class="n">create_token</span><span class="p">(</span><span class="n">user_data</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">return</span> <span class="n">access</span><span class="p">,</span> <span class="n">refresh</span>
+</span></code></pre></div>
+<h2 id="redisjwtservice">RedisJWTService</h2>
+<p>RedisJWTService extends JWTService with Redis-specific optimizations, leveraging Lua scripting for atomic operations. It is ideal for high-performance environments requiring efficient token storage and management.</p>
+<h3 id="additional-features">Additional Features</h3>
+<ul>
+<li>Optimized Token Storage: Uses Redis’s native commands and Lua scripts for efficient token management. </li>
+<li>Atomic Invalidation: Ensures secure and consistent token invalidation using Lua scripts. </li>
+<li>Search Capability: Provides functionality to retrieve all active refresh tokens for a user (sub), supporting session-based authentication management.</li>
+</ul>
+<h3 id="lua-scripts">Lua Scripts</h3>
+<ul>
+<li>Save Token Script: Atomically stores refresh tokens and associates them with access tokens. </li>
+<li>Invalidate Token Script: Invalidates access and refresh tokens while cleaning up associated metadata. </li>
+<li>Search Token Script: Fetches refresh tokens for a specific user and removes expired tokens.</li>
+</ul>
+<h3 id="usage-example_1">Usage Example</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">webtool.auth</span> <span class="kn">import</span> <span class="n">RedisJWTService</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">webtool.cache</span> <span class="kn">import</span> <span class="n">RedisCache</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">cache</span> <span class="o">=</span> <span class="n">RedisCache</span><span class="p">(</span><span class="s2">&quot;redis://localhost:6379/0&quot;</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">redis_jwt_service</span> <span class="o">=</span> <span class="n">RedisJWTService</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">secret_key</span><span class="o">=</span><span class="s2">&quot;your_secret_key&quot;</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">manage_tokens</span><span class="p">():</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user123&quot;</span><span class="p">}</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">access</span><span class="p">,</span> <span class="n">refresh</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis_jwt_service</span><span class="o">.</span><span class="n">create_token</span><span class="p">(</span><span class="n">user_data</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Access Token:&quot;</span><span class="p">,</span> <span class="n">access</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Refresh Token:&quot;</span><span class="p">,</span> <span class="n">refresh</span><span class="p">)</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="c1"># Validate tokens</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">access_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis_jwt_service</span><span class="o">.</span><span class="n">validate_access_token</span><span class="p">(</span><span class="n">access</span><span class="p">)</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Access Token Data:&quot;</span><span class="p">,</span> <span class="n">access_data</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">refresh_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis_jwt_service</span><span class="o">.</span><span class="n">validate_refresh_token</span><span class="p">(</span><span class="n">access</span><span class="p">,</span> <span class="n">refresh</span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Refresh Token Data:&quot;</span><span class="p">,</span> <span class="n">refresh_data</span><span class="p">)</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="c1"># Rotate tokens</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">new_access</span><span class="p">,</span> <span class="n">new_refresh</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis_jwt_service</span><span class="o">.</span><span class="n">update_token</span><span class="p">(</span><span class="n">user_data</span><span class="p">,</span> <span class="n">access</span><span class="p">,</span> <span class="n">refresh</span><span class="p">)</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New Access Token:&quot;</span><span class="p">,</span> <span class="n">new_access</span><span class="p">)</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New Refresh Token:&quot;</span><span class="p">,</span> <span class="n">new_refresh</span><span class="p">)</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    <span class="c1"># Search active tokens</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>    <span class="n">active_tokens</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis_jwt_service</span><span class="o">.</span><span class="n">search_token</span><span class="p">(</span><span class="n">new_access</span><span class="p">,</span> <span class="n">new_refresh</span><span class="p">)</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Active Refresh Tokens:&quot;</span><span class="p">,</span> <span class="n">active_tokens</span><span class="p">)</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># Example usage</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">manage_tokens</span><span class="p">())</span>
 </span></code></pre></div>
 
 
