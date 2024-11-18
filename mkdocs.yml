@@ -1,4 +1,5 @@
 site_name: webtool
+site_url: https://ds5105119.github.io/webtool/
 
 theme:
   name: 'material'
@@ -8,17 +9,24 @@ theme:
     - content.code.copy
     - content.code.select
     - content.code.annotate
+    - header.autohide
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.path
   palette:
     # Palette toggle for light mode
     - scheme: default
-    - primary: grey
+      primary: white
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
 
     # Palette toggle for dark mode
     - scheme: slate
-    - primary: grey
+      primary: white
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -31,3 +39,12 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+
+nav:
+- Webtool: index.md
+- Learn:
+    - JWT:
+        - manager.md
+        - service.md
+- Resources:
+    - resources/CONTRIBUTING.md
