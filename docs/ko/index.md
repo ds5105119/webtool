@@ -1,12 +1,12 @@
 # WebTool(Alpha)
 
-WebTool is Well-Architected FastAPI/Starlette library for authentication, throttling, caching, logging, and utilities.
+Webtool은 FastAPI/Starlette를 위한 JWT인증 및 스로틀링, 캐싱, 로깅 등을 위한 라이브러리입니다.
 
-## Requirements
+## 요구 사항
 
 - Python 3.11+
 
-## Installation
+## 설치
 
 ```shell
 pip install webtool
@@ -16,9 +16,10 @@ pip install webtool
 poetry add webtool
 ```
 
-## Features
+## 기능
 
-### Authentication
+### JWT 인증
+Redis 또는 InMemory Cache 백엔드를 사용한 RTR구조의 
 JWT token management system with Redis-backed refresh tokens.
 
 ```python
