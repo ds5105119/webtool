@@ -1,6 +1,8 @@
 site_name: webtool
+repo_name: ds5105119/webtool
 site_url: https://ds5105119.github.io/webtool/
 repo_url: https://github.com/ds5105119/webtool/
+edit_uri: edit/main/docs/
 
 theme:
   name: 'material'
@@ -12,11 +14,11 @@ theme:
     - content.code.annotate
     - header.autohide
     - navigation.tabs
-    - navigation.sections
     - navigation.expand
-    - navigation.instant
-    - navigation.instant.progress
     - navigation.path
+    - toc.integrate
+    - search.suggest
+    - search.highlight
   palette:
     # Palette toggle for light mode
     - scheme: default
@@ -42,6 +44,7 @@ markdown_extensions:
   - pymdownx.superfences
 
 plugins:
+  - search
   - i18n:
       docs_structure: folder
       fallback_to_default: true
@@ -58,8 +61,8 @@ nav:
   - Home:
     - index.md
   - Learn:
-      - JWT:
-          - docs/manager.md
-          - docs/service.md
+    - JWT:
+      - JWT Manager: docs/manager.md
+      - JWT Service: docs/service.md
   - Resources:
-      - resources/CONTRIBUTING.md
+    - resources/CONTRIBUTING.md
