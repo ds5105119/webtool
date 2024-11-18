@@ -1,6 +1,8 @@
 from collections import deque
 from typing import Any, Callable, Optional, Union
 
+from webtool.utils.hash import sha256
+
 THROTTLE_RULE_ATTR_NAME = "_throttle_rules"
 
 
@@ -39,7 +41,7 @@ def limiter(
     interval: int = 3600,
     throttle_key: Optional[str] = None,
     method: Optional[list[str]] = None,
-    scope: Optional[list[str]] = None,
+    scopes: Optional[list[str]] = None,
 ):
     """
     Decorator for implementing rate limiting on functions.
@@ -48,20 +50,21 @@ def limiter(
     :param interval: Time interval in seconds (default: 3600)
     :param throttle_key: Custom key for the rate limit (default: function path)
     :param method: List of HTTP methods to apply limit to (optional)
-    :param scope: List of user scopes to apply limit to (optional)
+    :param scopes: List of user scopes to apply limit to (optional)
     :return: Decorated function with rate limiting rules
     """
 
     def decorator(func):
         exist_func = find_closure_rules_function(func)
 
+        key = throttle_key
         if exist_func:
-            key = throttle_key or f"{exist_func.__module__}.{exist_func.__name__}"
+            key = key or sha256(f"{exist_func.__module__}{exist_func.__name__}{interval}{method}{scopes}").hex()
             if not hasattr(func, THROTTLE_RULE_ATTR_NAME):
                 exist_rules = getattr(exist_func, THROTTLE_RULE_ATTR_NAME)
                 setattr(func, THROTTLE_RULE_ATTR_NAME, exist_rules)
         else:
-            key = throttle_key or f"{func.__module__}.{func.__name__}"
+            key = key or sha256(f"{func.__module__}{func.__name__}{interval}{method}{scopes}").hex()
             setattr(func, THROTTLE_RULE_ATTR_NAME, LimitRuleManager())
 
         new_rule = LimitRule(
@@ -69,7 +72,7 @@ def limiter(
             interval=interval,
             throttle_key=key,
             method=[m.upper() for m in method] if method else [],
-            scope=scope or [],
+            scopes=scopes or [],
         )
 
         getattr(func, THROTTLE_RULE_ATTR_NAME).add_rules(new_rule)
@@ -96,7 +99,7 @@ class LimitRule:
         "max_requests",
         "interval",
         "method",
-        "scope",
+        "scopes",
         "for_user",
         "for_anno",
     )
@@ -107,33 +110,37 @@ class LimitRule:
         interval: int,
         throttle_key: str,
         method: Optional[list[str]],
-        scope: Optional[list[str]],
+        scopes: Optional[list[str]],
     ):
         """
         :param max_requests: Maximum number of requests allowed
         :param interval: Time interval in seconds
         :param throttle_key: Unique identifier for this rule
         :param method: List of HTTP methods this rule applies to
-        :param scope: List of user scopes this rule applies to
+        :param scopes: List of user scopes this rule applies to
         """
 
         self.max_requests: int = max_requests
         self.interval: int = interval
         self.throttle_key: str = throttle_key
         self.method: Optional[set[str]] = set(method)
-        self.scope: Optional[set[str]] = set(scope)
-        self.for_user: bool = "user" in scope or ("user" in scope) == ("anno" in scope)
-        self.for_anno: bool = "anno" in scope or ("user" in scope) == ("anno" in scope)
+        self.scopes: Optional[set[str]] = set(scopes)
+        self.for_user: bool = "user" in scopes or ("user" in scopes) == ("anno" in scopes)
+        self.for_anno: bool = "anno" in scopes or ("user" in scopes) == ("anno" in scopes)
 
-        self.scope.discard("user")
-        self.scope.discard("anno")
+        self.scopes.discard("user")
+        self.scopes.discard("anno")
 
     def __repr__(self):
         """
         String representation of the rule showing its configuration
         """
 
-        return f"{self.max_requests} per {self.interval} {self.throttle_key} {self.method} {self.scope}"
+        return (
+            f"{self.max_requests} / {self.interval} "
+            f"{self.throttle_key:.20s}... {self.method} {self.scopes} "
+            f"for {"user" if self.for_user else "anno" if self.for_anno else ""}"
+        )
 
     def is_enabled(
         self,
@@ -155,7 +162,7 @@ class LimitRule:
         if self.method and scope.get("method") not in self.method:
             return False
 
-        if not self.scope or (auth_scope and set(auth_scope) & self.scope):
+        if not self.scopes or (auth_scope and set(auth_scope) & self.scopes):
             if user_identifier and self.for_user:
                 return True
             elif anno_identifier and self.for_anno:
@@ -177,7 +184,7 @@ class LimitRuleManager:
 
     def should_limit(
         self,
-        scope,
+        scopes,
         anno_identifier: Any | None = None,
         user_identifier: Any | None = None,
         auth_scope: list[str] | None = None,
@@ -185,14 +192,14 @@ class LimitRuleManager:
         """
         Determines which rules should be applied for a given request.
 
-        :param scope: ASGI request scope
+        :param scopes: ASGI request scope
         :param anno_identifier: Anonymous user identifier (optional)
         :param user_identifier: Authenticated user identifier (optional)
         :param auth_scope: List of user scopes this rule applies to
         :return: List of applicable rules
         """
 
-        rules = [rule for rule in self.rules if rule.is_enabled(scope, anno_identifier, user_identifier, auth_scope)]
+        rules = [rule for rule in self.rules if rule.is_enabled(scopes, anno_identifier, user_identifier, auth_scope)]
 
         return rules
 

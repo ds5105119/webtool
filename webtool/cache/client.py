@@ -12,7 +12,7 @@ from redis.asyncio.retry import Retry
 from redis.backoff import default_backoff
 from redis.exceptions import BusyLoadingError, ConnectionError, RedisError
 
-from webtool.cache.lock import AsyncRedisLock, BaseLock
+from webtool.cache.lock import AsyncInMemoryLock, AsyncRedisLock, BaseLock
 
 DEFAULT_CAP = 0.512
 DEFAULT_BASE = 0.008
@@ -54,6 +54,7 @@ class BaseCache(ABC):
         :param value: The value associated with the key.
         :param ex: Expiration time for the key, in seconds or as a timedelta.
         :param exat: Expiration time as an absolute timestamp.
+        :param nx: if set to True, set the value at key to value only if it does not exist.
 
         :return: return of set.
 
@@ -111,13 +112,12 @@ class InMemoryCache(BaseCache):
     def __init__(self):
         self.cache: dict = {}
         self.connection_pool = None
-        self._lock = {}
 
     async def _expire(self) -> None:
         now = asyncio.get_event_loop().time()
-        self.cache = {k: v for k, v in self._lock.items() if v[1] > now}
+        self.cache = {k: v for k, v in self.cache.items() if v[1] > now}
 
-    async def lock(
+    def lock(
         self,
         key: Union[bytes, str, memoryview],
         ttl_ms: Union[int, timedelta, None] = 100,
@@ -125,14 +125,7 @@ class InMemoryCache(BaseCache):
         blocking_timeout: float = DEFAULT_CAP,
         blocking_sleep: float = DEFAULT_BASE,
     ) -> BaseLock:
-        now = asyncio.get_running_loop().time()
-        self._lock = {k: v for k, v in self._lock.items() if v[1] > now}
-
-        if key not in self._lock:
-            now = asyncio.get_event_loop().time()
-            self._lock[key] = (asyncio.Lock(), now + ttl_ms / 1000)
-
-        return self._lock[key]
+        return AsyncInMemoryLock(self, key, ttl_ms, blocking, blocking_timeout, blocking_sleep)
 
     async def set(
         self,
@@ -148,7 +141,7 @@ class InMemoryCache(BaseCache):
 
         if ex:
             now = asyncio.get_running_loop().time()
-            if isinstance(ex, int):
+            if isinstance(ex, (float, int)):
                 exp = now + ex
             else:
                 exp = now + ex.total_seconds()
@@ -167,6 +160,8 @@ class InMemoryCache(BaseCache):
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        await self._expire()
+
         val = self.cache.get(key)
         if val:
             return val[0]
@@ -176,11 +171,12 @@ class InMemoryCache(BaseCache):
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        await self._expire()
+
         return self.cache.pop(key)
 
     async def aclose(self) -> None:
         self.cache.clear()
-        self._lock.clear()
 
 
 @dataclass(frozen=True)

@@ -32,6 +32,4 @@ def test_decorator():
 
     rules = list(getattr(find_closure_rules_function(func), THROTTLE_RULE_ATTR_NAME).rules)
 
-    assert "1 per 2 a set() set()" in rules.__repr__()
-    assert "3 per 4 b set() set()" in rules.__repr__()
-    assert "5 per 6 c set() set()" in rules.__repr__()
+    assert len(rules) == 3

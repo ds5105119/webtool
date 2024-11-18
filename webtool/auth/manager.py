@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 class BaseJWTManager(ABC):
     """
     Abstract base class for managing JSON Web Tokens (JWT).
-    This class defines the interface for encoding and decoding JWTs.
+    This class defines the interface for encoding and decoding JWT (RFC7519).
     """
 
     @abstractmethod

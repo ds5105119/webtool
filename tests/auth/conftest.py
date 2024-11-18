@@ -1,7 +1,18 @@
 import pytest_asyncio
 
-from webtool.auth import RedisJWTService
-from webtool.cache import RedisCache
+from webtool.auth import JWTService, RedisJWTService
+from webtool.cache import InMemoryCache, RedisCache
+
+
+@pytest_asyncio.fixture(scope="session")
+async def inmemory_jwt_service():
+    client = InMemoryCache()
+    service = JWTService(client)
+
+    try:
+        yield service
+    finally:
+        await client.aclose()
 
 
 @pytest_asyncio.fixture(scope="session")

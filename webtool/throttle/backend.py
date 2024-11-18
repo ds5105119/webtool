@@ -371,7 +371,7 @@ class JWTBackend(BaseBackend):
         :return: JTI string
         """
 
-        return authenticate_data.get("jti")
+        return authenticate_data.get("sub")
 
     def get_scope(self, authenticate_data: Any) -> list[str] | None:
         """
@@ -381,7 +381,7 @@ class JWTBackend(BaseBackend):
         :return: scope
         """
 
-        return authenticate_data.get("scope")
+        return authenticate_data.get("scopes")
 
     @staticmethod
     def _callback():

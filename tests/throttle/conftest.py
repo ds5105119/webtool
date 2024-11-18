@@ -2,7 +2,7 @@ import pytest_asyncio
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 
-from webtool.auth import JWTService
+from webtool.auth import JWTService, RedisJWTService
 from webtool.cache import RedisCache
 from webtool.throttle import JWTBackend, LimitMiddleware, RedisLimiter, limiter
 from webtool.utils import MsgSpecJSONResponse
@@ -20,7 +20,7 @@ async def redis():
 
 @pytest_asyncio.fixture(scope="session")
 def jwt_service(redis):
-    service = JWTService(redis, secret_key="test")
+    service = RedisJWTService(redis, secret_key="test")
 
     return service
 
@@ -66,14 +66,14 @@ async def api_2():
 
 
 @app.get("/3/")
-@limiter(4, 10, scope=["user"])
-@limiter(2, 10, scope=["anno"])
+@limiter(4, 10, scopes=["user"])
+@limiter(2, 10, scopes=["anno"])
 async def api_3():
     return {"msg": "Hello World"}
 
 
 @app.get("/4/")
-@limiter(4, 10, method=["GET"], scope=["user", "write"])
-@limiter(2, 10, scope=["anno"])
+@limiter(4, 10, method=["GET"], scopes=["user", "write"])
+@limiter(2, 10, scopes=["anno"])
 async def api_4():
     return {"msg": "Hello World"}

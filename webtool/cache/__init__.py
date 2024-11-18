@@ -1,3 +1,3 @@
-from .client import RedisCache, RedisConfig
+from .client import InMemoryCache, RedisCache, RedisConfig
 
-__all__ = ["RedisCache", "RedisConfig"]
+__all__ = ["InMemoryCache", "RedisCache", "RedisConfig"]

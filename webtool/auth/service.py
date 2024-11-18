@@ -1,4 +1,3 @@
-import asyncio
 import time
 from abc import ABC, abstractmethod
 from typing import Any, NotRequired, Optional, TypedDict
@@ -16,7 +15,7 @@ class TokenData(TypedDict):
     exp: NotRequired[float]
     iat: NotRequired[float]
     jti: NotRequired[str]
-    scope: NotRequired[list[str]]
+    scopes: NotRequired[list[str]]
     extra: NotRequired[dict[str, Any]]
 
 
@@ -119,7 +118,7 @@ class JWTService(BaseJWTService):
     def _create_token(self, data: dict, access_token: Optional[str] = None) -> str:
         return self._jwt_manager.encode(data, self._secret_key, self.algorithm, access_token)
 
-    def _decode_token(self, access_token: str, refresh_token: str | None = None):
+    def _decode_token(self, access_token: str, refresh_token: str | None = None) -> TokenData:
         if refresh_token:
             return self._jwt_manager.decode(refresh_token, self._secret_key, self.algorithm, access_token)
         else:
@@ -130,13 +129,13 @@ class JWTService(BaseJWTService):
 
         key = self._get_key(refresh_data)
         val = self._get_extra(refresh_data)
-        val.setdefault("access_jti", access_jti)
+        val["access_jti"] = access_jti
         val = self._json_encoder.encode(val)
 
         async with self._cache.lock(key, 100):
             await self._cache.set(key, val, ex=self.refresh_token_expire_time)
 
-    async def _read_token_data(self, refresh_data: TokenData) -> TokenData | None:
+    async def _read_token_data(self, refresh_data: TokenData) -> dict | None:
         key = self._get_key(refresh_data)
 
         async with self._cache.lock(key, 100):
@@ -147,9 +146,9 @@ class JWTService(BaseJWTService):
 
         return val
 
-    async def _invalidate_token_data(self, refresh_data: TokenData) -> None:
-        refresh_exp = self._get_exp(refresh_data)
-        refresh_db_data = await self._read_token_data(refresh_data)
+    async def _invalidate_token_data(self, validated_refresh_data: TokenData) -> None:
+        refresh_exp = self._get_exp(validated_refresh_data)
+        refresh_db_data = await self._read_token_data(validated_refresh_data)
         access_key = f"{JWTService._CACHE_INVALIDATE_PREFIX}{refresh_db_data.get('access_jti')}"
         access_exp = refresh_exp - self.refresh_token_expire_time + self.access_token_expire_time
         now = time.time()
@@ -157,7 +156,7 @@ class JWTService(BaseJWTService):
         if access_exp > now:
             await self._cache.set(access_key, 1, exat=int(access_exp) + 1, nx=True)
 
-        refresh_jti = self._get_key(refresh_data)
+        refresh_jti = self._get_key(validated_refresh_data)
         await self._cache.delete(refresh_jti)
 
     async def create_token(self, data: dict) -> tuple[str, str]:
@@ -188,13 +187,14 @@ class JWTService(BaseJWTService):
         self, access_token: str, refresh_token: str, validate_exp=True
     ) -> TokenData | None:
         refresh_data = self._decode_token(access_token, refresh_token)
-
         if validate_exp and not self._validate_exp(refresh_data):
             return None
 
-        if not await self._read_token_data(refresh_data):
+        cached_refresh_data = await self._read_token_data(refresh_data)
+        if not cached_refresh_data:
             return None
 
+        refresh_data["extra"] |= cached_refresh_data
         return refresh_data
 
     async def invalidate_token(self, access_token: str, refresh_token: str) -> bool:
@@ -244,26 +244,8 @@ class RedisJWTService(JWTService):
         
     -- SAVE REFRESH TOKEN FOR SEARCH
     key = "jwt_sub_" .. refresh_sub
-    redis.call('ZADD', key, now, access_jti)
+    redis.call('ZADD', key, now, refresh_jti)
     redis.call("EXPIRE", key, refresh_token_expire_time)
-    """
-
-    _LUA_READ_TOKEN_SCRIPT = """
-    -- PARAMETERS
-    local sub = KEYS[1]
-    local now = tonumber(ARGV[1])
-    local jti = ARGV[2]
-
-    redis.call('ZREMRANGEBYSCORE', sub, 0, now)
-    local res = redis.call('ZSCORE', sub, jti)
-
-    if res == nil then
-        return "jti not found"
-    else
-        return cjson.encode(ruleset)
-    end
-
-    return cjson.encode(ruleset)
     """
 
     _LUA_INVALIDATE_TOKEN_SCRIPT = """
@@ -272,39 +254,58 @@ class RedisJWTService(JWTService):
     local now = tonumber(ARGV[1])
     local access_token_expire_time = tonumber(ARGV[2])
     local refresh_token_expire_time = tonumber(ARGV[3])
-        
+    local refresh_jti_to_invalidate = ARGV[4]
+    local access_jti
+    local key
+    local refresh_to_invalidate_issue_time
+    
     -- REFRESH TOKEN DATA EXTRACTION
     refresh_token = cjson.decode(refresh_token)
-    local refresh_jti = refresh_token['jti']
     local refresh_sub = refresh_token['sub']
-    local refresh_exp = tonumber(refresh_token['exp'])
+    local refresh_jti = refresh_token['jti']
+    
+    if #refresh_jti_to_invalidate > 0 then
+    
+        -- CHECK REFRESH TOKEN DATA FOR SEARCH
+        key = "jwt_sub_" .. refresh_sub
+        refresh_to_invalidate_issue_time = redis.call('ZSCORE', key, refresh_jti_to_invalidate)
+        if not refresh_to_invalidate_issue_time then
+            return 0
+        end
         
-    -- VALIDATE REFRESH TOKEN
-    local key = "jwt_" .. refresh_jti
-    local refresh_val = redis.call('GET', key)
+        -- CHECK REFRESH TOKEN DATA FOR VALIDATION
+        key = "jwt_" .. refresh_jti
+        local refresh_data_to_invalidate = redis.call('GET', key)
+        if not refresh_data_to_invalidate then
+            redis.call('ZREM', refresh_sub, refresh_jti_to_invalidate)
+            return 0
+        end
         
-    if not refresh_val then
-        return 0
+        -- REFRESH TOKEN DATA EXTRACTION
+        refresh_data_to_invalidate = cjson.decode(refresh_data_to_invalidate)
+        access_jti = refresh_data_to_invalidate['access_jti']
+        refresh_jti = refresh_jti_to_invalidate
+    else
+    
+        -- INVALIDATE ORIGINAL ACCESS, REFRESH TOKEN
+        access_jti = refresh_token['extra']['access_jti']
+        refresh_to_invalidate_issue_time = refresh_token['exp'] - refresh_token_expire_time
     end
-        
-    -- READ REFRESH TOKEN DATA
-    local decoded_val = cjson.decode(refresh_val)
+
+    -- MARK THE ACCESS TOKEN AS EXPIRED
+    local access_exp = refresh_to_invalidate_issue_time + access_token_expire_time
+    if access_exp > now then
+        key = "jwt_invalidate_" .. access_jti
+        redis.call('SET', key, 1, 'EXAT', math.ceil(access_exp))
+    end
     
     -- DELETE REFRESH TOKEN DATA FOR VALIDATION
-    key = "jwt_" .. refresh_jti
+    local key = "jwt_" .. refresh_jti
     redis.call('DEL', key)
     
     -- DELETE REFRESH TOKEN DATA FOR SEARCH
     key = "jwt_sub_" .. refresh_sub
-    local access_jti = decoded_val['access_jti']
-    redis.call('ZREM', key, access_jti)
-    
-    -- MARK THE ACCESS TOKEN AS EXPIRED
-    local access_exp = refresh_exp - refresh_token_expire_time + access_token_expire_time
-    if access_exp > now then
-        key = "jwt_invalidate_" .. access_jti
-        redis.call('SET', key, 1, 'EX', math.ceil(access_exp))
-    end
+    redis.call('ZREM', key, refresh_jti)
     
     return 1
     """
@@ -314,13 +315,14 @@ class RedisJWTService(JWTService):
     local refresh_token = KEYS[1]
     local now = tonumber(ARGV[1])
     local refresh_token_expire_time = tonumber(ARGV[2])
+    local key
     
     -- REFRESH TOKEN DATA EXTRACTION
     refresh_token = cjson.decode(refresh_token)
-    local refresh_sub = refresh_token["sub"]
+    local refresh_sub = refresh_token['sub']
 
     -- DELETE EXPIRED REFRESH TOKEN DATA FOR SEARCH
-    local key = "jwt_sub_" .. refresh_sub
+    key = "jwt_sub_" .. refresh_sub
     redis.call('ZREMRANGEBYSCORE', key, 0, now - refresh_token_expire_time)
     
     -- RETURN REFRESH TOKENS OF SUB
@@ -356,8 +358,12 @@ class RedisJWTService(JWTService):
                 ],
             )
 
-    async def _invalidate_token_data(self, refresh_data: TokenData) -> bool:
-        refresh_json = self._json_encoder.encode(refresh_data)
+    async def _invalidate_token_data(
+        self,
+        validated_refresh_data: TokenData,
+        refresh_jti_to_invalidate: str | None = None,
+    ) -> bool:
+        refresh_json = self._json_encoder.encode(validated_refresh_data)
 
         return await self._invalidate_script(
             keys=[refresh_json],
@@ -365,8 +371,25 @@ class RedisJWTService(JWTService):
                 time.time(),
                 self.access_token_expire_time,
                 self.refresh_token_expire_time,
+                refresh_jti_to_invalidate or b"",
             ],
         )
+
+    async def invalidate_token(
+        self,
+        access_token: str,
+        refresh_token: str,
+        refresh_jti_to_invalidate: str | None = None,
+    ) -> bool:
+        refresh_data = await self.validate_refresh_token(access_token, refresh_token)
+
+        if not refresh_data:
+            return False
+
+        if not refresh_jti_to_invalidate:
+            refresh_jti_to_invalidate = self._get_jti(refresh_data)
+
+        return await self._invalidate_token_data(refresh_data, refresh_jti_to_invalidate)
 
     async def search_token(self, access_token: str, refresh_token: str):
         refresh_data = self._decode_token(access_token, refresh_token)
@@ -413,12 +436,13 @@ async def main():
     r_data = await redis_jwt.validate_refresh_token(new_access, new_refresh)
     print(r_data)
 
-    print(await redis_jwt.search_token(new_access, new_refresh))
+    x = await redis_jwt.search_token(new_access, new_refresh)
+    print(x)
 
-    print(await redis_jwt.update_token(user, access, refresh))
-    print(await redis_jwt.update_token(user, access, refresh))
     print(await redis_jwt.update_token(user, access, refresh))
 
 
 if __name__ == "__main__":
+    import asyncio
+
     asyncio.run(main())

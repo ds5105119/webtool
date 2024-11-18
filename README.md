@@ -1,7 +1,7 @@
 # WebTool(Alpha)
 <img src="https://github.com/ds5105119/webtool/workflows/CI/badge.svg">
 
-Well-Architected FastAPI/Starlette library for authentication, throttling, caching, logging, and utilities.
+Well-Architected FastAPI/Starlette library for JWT authentication, throttling, caching, logging, and utilities.
 
 ## Requirements
 
@@ -61,8 +61,8 @@ app = FastAPI(
 
 
 @app.get("/api/resource")
-@limiter(max_requests=50, interval=3600, scope=["user"])
-@limiter(max_requests=10, interval=3600, scope=["anno"])
+@limiter(max_requests=50, interval=3600, scopes=["user"])
+@limiter(max_requests=10, interval=3600, scopes=["anno"])
 async def get_resource():
     return {"status": "success"}
 ```
