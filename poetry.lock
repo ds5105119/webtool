@@ -1054,6 +1054,24 @@ files = [
 ]
 
 [[package]]
+name = "mkdocs-static-i18n"
+version = "1.2.3"
+description = "MkDocs i18n plugin using static translation markdown files"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "mkdocs_static_i18n-1.2.3-py3-none-any.whl", hash = "sha256:e6f2f3c53b657d7632015b32dea3c64d0b80a7a8d6cde0334ca8f66f9e33b52f"},
+    {file = "mkdocs_static_i18n-1.2.3.tar.gz", hash = "sha256:7ccf4da6dd29570ec49cd863ebff6fef9cb82dbb1cb85249bdf744e8d839c914"},
+]
+
+[package.dependencies]
+mkdocs = ">=1.5.2"
+mkdocs-material = {version = ">=9.2.5", optional = true, markers = "extra == \"material\""}
+
+[package.extras]
+material = ["mkdocs-material (>=9.2.5)"]
+
+[[package]]
 name = "msgspec"
 version = "0.18.6"
 description = "A fast serialization and validation library, with builtin support for JSON, MessagePack, YAML, and TOML."
@@ -2117,4 +2135,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1e3985eed3bab7ad654606b935c540614fa983374bf57e8933a8808afd4be3b9"
+content-hash = "95ae8c228123cc76b03fd701df51461fc853f8fad42227159a296022bde18064"
