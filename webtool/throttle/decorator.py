@@ -139,7 +139,7 @@ class LimitRule:
         return (
             f"{self.max_requests} / {self.interval} "
             f"{self.throttle_key:.20s}... {self.method} {self.scopes} "
-            f"for {"user" if self.for_user else "anno" if self.for_anno else ""}"
+            f"for {'user' if self.for_user else 'anno' if self.for_anno else ''}"
         )
 
     def is_enabled(
