@@ -1,59 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://ds5105119.github.io/webtool/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/"/>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/"/>
+         <loc>https://ds5105119.github.io/webtool/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/docs/manager/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/docs/manager/"/>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/docs/manager/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/cache/client/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/docs/service/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/docs/service/"/>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/docs/service/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/jwt/manager/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/resources/CONTRIBUTING/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/resources/CONTRIBUTING/"/>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/resources/CONTRIBUTING/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/jwt/service/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/ko/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/throttle/backend/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/ko/docs/manager/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/docs/manager/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/docs/manager/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/throttle/decorator/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/ko/docs/service/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/docs/service/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/docs/service/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/throttle/limiter/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
     <url>
-        <loc>https://ds5105119.github.io/webtool/ko/resources/CONTRIBUTING/</loc>
-        <lastmod>2024-11-18</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ko" href="https://ds5105119.github.io/webtool/ko/resources/CONTRIBUTING/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://ds5105119.github.io/webtool/resources/CONTRIBUTING/"/>
+         <loc>https://ds5105119.github.io/webtool/learn/throttle/middleware/</loc>
+         <lastmod>2024-11-19</lastmod>
+    </url>
+    <url>
+         <loc>https://ds5105119.github.io/webtool/resources/CONTRIBUTING/</loc>
+         <lastmod>2024-11-19</lastmod>
     </url>
 </urlset>
