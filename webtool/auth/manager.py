@@ -97,12 +97,15 @@ class JWTManager(BaseJWTManager):
     ) -> str:
         """
         Encodes the specified claims into a JSON Web Token (JWT) with a specified expiration time.
-        :param claims: A dictionary containing the claims to be included in the JWT.
-        :param secret_key: The secret key used to sign the JWT.
-        :param algorithm: The signing algorithm to use for the JWT, defaults to 'ES384'.
-        :param access_token: Optional parameter for additional handling of access tokens.
 
-        :return: JWT
+        Parameters:
+            claims: A dictionary containing the claims to be included in the JWT.
+            secret_key: The secret key used to sign the JWT.
+             algorithm: The signing algorithm to use for the JWT, defaults to 'ES384'.
+             access_token: Optional parameter for additional handling of access tokens.
+
+        Returns:
+            str: Json Web Token (JWT).
         """
 
         return self.jwt.encode(claims, secret_key, algorithm=algorithm)
@@ -118,14 +121,15 @@ class JWTManager(BaseJWTManager):
         """
         Decodes a JSON Web Token (JWT) and returns the claims if valid.
 
-        :param token: The JWT string to be decoded.
-        :param secret_key: The secret key used to validate the JWT signature.
-        :param algorithm: The signing algorithm used for verification JWT, defaults to 'ES384'.
-        :param access_token: Optional parameter for additional handling of access tokens.
-        :param raise_error: Optional parameter for additional handling of error messages.
+        Parameters:
+            token: The JWT string to be decoded.
+            secret_key: The secret key used to validate the JWT signature.
+            algorithm: The signing algorithm used for verification JWT, defaults to 'ES384'.
+            access_token: Optional parameter for additional handling of access tokens.
+            raise_error: Optional parameter for additional handling of error messages.
 
-        :return: A dictionary containing the claims if the token is valid,
-                 or None if the token is invalid or expired.
+        Returns:
+            dict: A dictionary containing the claims if the token is valid, or None if the token is invalid or expired.
         """
 
         try:

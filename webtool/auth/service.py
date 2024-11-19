@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Any, NotRequired, Optional, TypedDict
 from uuid import uuid4
 
-from jose.constants import ALGORITHMS
-
 from webtool.auth.manager import BaseJWTManager, JWTManager
 from webtool.cache.client import BaseCache, RedisCache
 from webtool.utils.json import ORJSONDecoder, ORJSONEncoder
@@ -383,13 +381,13 @@ class RedisJWTService(JWTService):
     def __init__(
         self,
         cache: "RedisCache",
-        jwt_manager: BaseJWTManager | None = None,
-        secret_key: str = "123",
-        algorithm: str = ALGORITHMS.HS384,
+        secret_key: str | bytes = "",
         access_token_expire_time: int = 3600,
         refresh_token_expire_time: int = 604800,
+        jwt_manager: BaseJWTManager | None = None,
+        algorithm: str | None = None,
     ):
-        super().__init__(cache, jwt_manager, secret_key, algorithm, access_token_expire_time, refresh_token_expire_time)
+        super().__init__(cache, secret_key, access_token_expire_time, refresh_token_expire_time, jwt_manager, algorithm)
         self._save_script = self._cache.cache.register_script(RedisJWTService._LUA_SAVE_TOKEN_SCRIPT)
         self._invalidate_script = self._cache.cache.register_script(RedisJWTService._LUA_INVALIDATE_TOKEN_SCRIPT)
         self._search_script = self._cache.cache.register_script(RedisJWTService._LUA_SEARCH_TOKEN_SCRIPT)
