@@ -28,7 +28,7 @@ class BaseJWTService(ABC):
             data: must include 'sub' field.
 
         Returns:
-            tuple[str, str]: Access, Refresh Token.
+            tuple: Access, Refresh Token.
         """
         raise NotImplementedError
 
@@ -83,7 +83,7 @@ class BaseJWTService(ABC):
             refresh_token: Access Token.
 
         Returns:
-            tuple[str, str]: Access, Refresh Token.
+            tuple: Access, Refresh Token.
         """
         raise NotImplementedError
 
@@ -270,7 +270,7 @@ class JWTService(BaseJWTService):
             data: must include 'sub' field.
 
         Returns:
-            tuple[str, str]: Access, Refresh Token.
+            tuple: Access, Refresh Token.
         """
         self._validate_sub(data)
 
@@ -356,7 +356,7 @@ class JWTService(BaseJWTService):
             refresh_token: Access Token.
 
         Returns:
-            tuple[str, str]: Access, Refresh Token.
+            tuple: Access, Refresh Token.
         """
         refresh_data = await self.validate_refresh_token(refresh_token)
 
