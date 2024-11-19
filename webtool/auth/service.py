@@ -1,6 +1,6 @@
 import time
 from abc import ABC, abstractmethod
-from typing import Any, NotRequired, Optional, TypedDict
+from typing import Any, NotRequired, TypedDict
 from uuid import uuid4
 
 from webtool.auth.manager import BaseJWTManager, JWTManager
