@@ -1,11 +1,11 @@
 import pytest_asyncio
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from starlette.middleware import Middleware
 
 from webtool.auth import JWTService, RedisJWTService
 from webtool.cache import RedisCache
 from webtool.throttle import JWTBackend, LimitMiddleware, RedisLimiter, limiter
-from webtool.utils import MsgSpecJSONResponse
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -50,7 +50,7 @@ app = FastAPI(
             auth_backend=global_backend,
         ),
     ],
-    default_response_class=MsgSpecJSONResponse,
+    default_response_class=ORJSONResponse,
 )
 
 

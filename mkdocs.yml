@@ -16,53 +16,85 @@ theme:
     - navigation.tabs
     - navigation.expand
     - navigation.path
-    - toc.integrate
     - search.suggest
     - search.highlight
+    - toc.follow
+
   palette:
     # Palette toggle for light mode
     - scheme: default
       primary: white
+      accent: amber
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
 
     # Palette toggle for dark mode
     - scheme: slate
-      primary: white
+      primary: grey
+      accent: amber
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
 
 markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
+  # Python Markdown
+  abbr:
+  admonition:
+  attr_list:
+  footnotes:
+  md_in_html:
+  tables:
+  toc:
+    permalink: true
+
+  # Python Markdown Extensions
+  pymdownx.highlight:
+    anchor_linenums: true
+    line_spans: __span
+    pygments_lang_class: true
+  pymdownx.details:
+  pymdownx.inlinehilite:
+  pymdownx.snippets:
+  pymdownx.superfences:
+  pymdownx.blocks.details:
+  pymdownx.blocks.tab:
+    alternate_style: True
+
 
 plugins:
-  - search
-  - i18n:
-      docs_structure: folder
-      fallback_to_default: true
-      languages:
-        - locale: en
-          default: true
-          name: English
-          build: true
-        - locale: ko
-          name: 한국어
-          build: true
+  search:
+
+  mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_if_no_docstring: true
+          inherited_members: true
+          members_order: source
+          separate_signature: true
+          unwrap_annotated: true
+          filters:
+            - '!^_'
+          docstring_section_style: table
+          signature_crossrefs: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
 
 nav:
   - Home:
     - index.md
-  - Learn:
+  - Reference:
+    - Cache:
+      - Cache Client: learn/cache/client.md
     - JWT:
-      - JWT Manager: docs/manager.md
-      - JWT Service: docs/service.md
+      - JWT Manager: learn/jwt/manager.md
+      - JWT Service: learn/jwt/service.md
+    - Throttle:
+      - Backend: learn/throttle/backend.md
+      - Decorator: learn/throttle/decorator.md
+      - Limiter: learn/throttle/limiter.md
+      - Middleware: learn/throttle/middleware.md
+
   - Resources:
     - resources/CONTRIBUTING.md

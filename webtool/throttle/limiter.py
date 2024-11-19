@@ -1,10 +1,9 @@
 import asyncio
 from abc import ABC, abstractmethod
 
-import msgspec
-
 from webtool.cache.client import RedisCache
 from webtool.throttle.decorator import LimitRule
+from webtool.utils.json import ORJSONDecoder, ORJSONEncoder
 
 
 class BaseLimiter(ABC):
@@ -62,6 +61,8 @@ class RedisLimiter(BaseLimiter):
 
         self._cache = redis_cache.cache
         self._redis_function = self._cache.register_script(RedisLimiter._LUA_LIMITER_SCRIPT)
+        self._json_encoder = ORJSONEncoder()
+        self._json_decoder = ORJSONDecoder()
 
     @staticmethod
     def _get_ruleset(identifier: str, rules: list[LimitRule]) -> dict[str, tuple[int, int]]:
@@ -87,8 +88,8 @@ class RedisLimiter(BaseLimiter):
 
         now = asyncio.get_running_loop().time()
 
-        result = await self._redis_function(keys=list(ruleset.keys()), args=[now, msgspec.json.encode(ruleset)])
-        result = msgspec.json.decode(result)
+        result = await self._redis_function(keys=list(ruleset.keys()), args=[now, self._json_encoder.encode(ruleset)])
+        result = self._json_decoder.decode(result)
 
         return result
 

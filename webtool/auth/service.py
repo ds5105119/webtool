@@ -3,11 +3,12 @@ from abc import ABC, abstractmethod
 from typing import Any, NotRequired, Optional, TypedDict
 from uuid import uuid4
 
-import msgspec
 from jose.constants import ALGORITHMS
 
 from webtool.auth.manager import BaseJWTManager, JWTManager
 from webtool.cache.client import BaseCache, RedisCache
+from webtool.utils.json import ORJSONDecoder, ORJSONEncoder
+from webtool.utils.key import load_key
 
 
 class TokenData(TypedDict):
@@ -22,6 +23,12 @@ class TokenData(TypedDict):
 class BaseJWTService(ABC):
     @abstractmethod
     async def create_token(self, data: dict) -> tuple[str, str]:
+        """
+        Create Access and Refresh Tokens.
+
+        Parameters:
+            data: must include 'sub' field.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -54,20 +61,64 @@ class JWTService(BaseJWTService):
     def __init__(
         self,
         cache: "BaseCache",
-        jwt_manager: BaseJWTManager | None = None,
-        secret_key: str = "",
-        algorithm: str = ALGORITHMS.HS384,
+        secret_key: str | bytes = "",
         access_token_expire_time: int = 3600,
         refresh_token_expire_time: int = 604800,
+        jwt_manager: BaseJWTManager | None = None,
+        algorithm: str | None = None,
     ):
         self._cache = cache
         self._secret_key = secret_key
         self._jwt_manager = jwt_manager or JWTManager()
-        self._json_encoder = msgspec.json.Encoder()
-        self._json_decoder = msgspec.json.Decoder()
+        self._json_encoder = ORJSONEncoder()
+        self._json_decoder = ORJSONDecoder()
         self.algorithm = algorithm
         self.access_token_expire_time = access_token_expire_time
         self.refresh_token_expire_time = refresh_token_expire_time
+
+        self._private_key = None
+        self._public_key = None
+
+        if isinstance(self._secret_key, bytes):
+            key_cart = self._get_keys_from_secret()
+
+            if key_cart:
+                self._private_key, self._public_key, key_algorithm = key_cart
+                self._secret_key = None
+            else:
+                key_algorithm = self._get_symmetric_algorithm()
+        else:
+            key_algorithm = self._get_symmetric_algorithm()
+
+        self._verify_key_algorithm(key_algorithm)
+
+    def _get_symmetric_algorithm(self):
+        key_size = len(self._secret_key)
+
+        if key_size < 48:
+            return "HS256"
+        elif key_size < 64:
+            return "HS384"
+        else:
+            return "HS512"
+
+    def _get_keys_from_secret(self) -> tuple[bytes, bytes, str] | None:
+        """
+        Attempt to load keys from the secret key.
+        Returns a tuple of (private_key, public_key, key_algorithm).
+        """
+        return load_key(self._secret_key)
+
+    def _verify_key_algorithm(self, key_algorithm: str) -> None:
+        """
+        Verify that the loaded key's algorithm matches the expected algorithm.
+        Raises ValueError if there is a mismatch.
+        """
+        if self.algorithm:
+            if key_algorithm != self.algorithm:
+                raise ValueError(f"Expected algorithm {key_algorithm}, but got {self.algorithm}")
+        else:
+            self.algorithm = key_algorithm
 
     @staticmethod
     def _get_jti(validated_data: TokenData) -> str:

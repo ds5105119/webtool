@@ -101,11 +101,15 @@ def make_ed_key(curve: str = "ed25519", save: bool = False, password: str | byte
     return private_key
 
 
-def load_key(private_key: bytes, password: str | bytes | None = None) -> tuple[bytes, bytes, str]:
+def load_key(private_key: bytes, password: str | bytes | None = None) -> tuple[bytes, bytes, str] | None:
     if isinstance(password, str):
         password = password.encode("utf-8")
 
-    private_key = load_pem_private_key(private_key, password=password)
+    try:
+        private_key = load_pem_private_key(private_key, password=password)
+    except ValueError:
+        return None
+
     public_key = private_key.public_key()
 
     if isinstance(private_key, rsa.RSAPrivateKey):
@@ -146,7 +150,3 @@ def load_key(private_key: bytes, password: str | bytes | None = None) -> tuple[b
     )
 
     return private_key, public_key, algorithm
-
-
-a = make_ed_key()
-print(load_key(a))

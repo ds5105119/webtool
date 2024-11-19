@@ -1,13 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from jose import JWTError, jwt
+import jwt
 
 
 class BaseJWTManager(ABC):
     """
     Abstract base class for managing JSON Web Tokens (JWT).
     This class defines the interface for encoding and decoding JWT (RFC7519).
+
+    Note:
+        대부분의 경우 해당 클래스의 하위 구현체를 직접 사용할 필요는 거의 없습니다.
     """
 
     @abstractmethod
@@ -21,14 +24,17 @@ class BaseJWTManager(ABC):
         """
         Encodes the specified claims into a JSON Web Token (JWT).
 
-        :param claims: A dictionary containing the claims to be included in the JWT.
-        :param secret_key: The secret key used to sign the JWT.
-        :param algorithm: The signing algorithm to be used for the JWT.
-        :param access_token: Optional parameter for additional handling of access tokens.
+        Parameters:
+            claims: A dictionary containing the claims to be included in the JWT.
+            secret_key: The secret key used to sign the JWT.
+            algorithm: The signing algorithm to be used for the JWT.
+            access_token: Optional parameter for additional handling of access tokens.
 
-        :return: A string representation of the encoded JWT.
+        Returns:
+            str: A string representation of the encoded JWT.
 
-        :raises NotImplementedError: If this method is not implemented in a subclass.
+        Raises:
+             NotImplementedError: If this method is not implemented in a subclass.
         """
 
         raise NotImplementedError
@@ -44,15 +50,17 @@ class BaseJWTManager(ABC):
         """
         Decodes a JSON Web Token (JWT) and validates its claims.
 
-        :param token: The JWT string to be decoded.
-        :param secret_key: The secret key used to validate the JWT signature.
-        :param algorithm: The signing algorithm used to verify the JWT,
-        :param access_token: Optional parameter for additional handling of access tokens.
+        Parameters:
+            token: The JWT string to be decoded.
+            secret_key: The secret key used to validate the JWT signature.
+            algorithm: The signing algorithm used to verify the JWT,
+            access_token: Optional parameter for additional handling of access tokens.
 
-        :return: A dictionary containing the claims if the token is valid,
-                 or None if the token is invalid or expired.
+        Returns:
+            dicy: A dictionary containing the claims if the token is valid, or None if the token is invalid or expired.
 
-        :raises NotImplementedError: If this method is not implemented in a subclass.
+        Raises:
+             NotImplementedError: If this method is not implemented in a subclass.
         """
 
         raise NotImplementedError
@@ -62,6 +70,23 @@ class JWTManager(BaseJWTManager):
     """
     JWT manager for encoding and decoding JSON Web Tokens.
     """
+
+    def __init__(self):
+        self.jwt = jwt.PyJWT(self._get_default_options())
+
+    @staticmethod
+    def _get_default_options() -> dict[str, bool | list[str]]:
+        return {
+            "verify_signature": True,
+            "verify_exp": False,
+            "verify_nbf": True,
+            "verify_iat": True,
+            "verify_aud": True,
+            "verify_iss": True,
+            "verify_sub": True,
+            "verify_jti": True,
+            "require": [],
+        }
 
     def encode(
         self,
@@ -80,7 +105,7 @@ class JWTManager(BaseJWTManager):
         :return: JWT
         """
 
-        return jwt.encode(claims, secret_key, algorithm=algorithm, access_token=access_token)
+        return self.jwt.encode(claims, secret_key, algorithm=algorithm)
 
     def decode(
         self,
@@ -88,6 +113,7 @@ class JWTManager(BaseJWTManager):
         secret_key: str,
         algorithm: str,
         access_token: Optional[str] = None,
+        raise_error: bool = False,
     ) -> dict | None:
         """
         Decodes a JSON Web Token (JWT) and returns the claims if valid.
@@ -96,39 +122,21 @@ class JWTManager(BaseJWTManager):
         :param secret_key: The secret key used to validate the JWT signature.
         :param algorithm: The signing algorithm used for verification JWT, defaults to 'ES384'.
         :param access_token: Optional parameter for additional handling of access tokens.
+        :param raise_error: Optional parameter for additional handling of error messages.
 
         :return: A dictionary containing the claims if the token is valid,
                  or None if the token is invalid or expired.
         """
 
         try:
-            options = {
-                "verify_signature": True,
-                "verify_aud": False,
-                "verify_iat": True,
-                "verify_exp": False,
-                "verify_nbf": True,
-                "verify_iss": True,
-                "verify_sub": True,
-                "verify_jti": True,
-                "verify_at_hash": True,
-                "require_aud": False,
-                "require_iat": False,
-                "require_exp": False,
-                "require_nbf": False,
-                "require_iss": False,
-                "require_sub": False,
-                "require_jti": False,
-                "require_at_hash": False,
-                "leeway": 0,
-            }
-
-            return jwt.decode(
+            return self.jwt.decode(
                 token,
                 secret_key,
                 algorithms=[algorithm],
-                options=options,
                 access_token=access_token,
             )
-        except JWTError:
-            return None
+        except jwt.InvalidTokenError as e:
+            if raise_error:
+                raise e
+            else:
+                return None
