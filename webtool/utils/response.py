@@ -1,7 +1,11 @@
 from typing import Any
 
-import msgspec
 from starlette.responses import JSONResponse as JSONResponse
+
+try:
+    import msgspec
+except ImportError:  # pragma: nocover
+    msgspec = None  # type: ignore
 
 
 class MsgSpecJSONResponse(JSONResponse):
@@ -10,4 +14,5 @@ class MsgSpecJSONResponse(JSONResponse):
     """
 
     def render(self, content: Any) -> bytes:
+        assert msgspec is not None, "msgspec must be installed to use MsgSpecJSONResponse"
         return msgspec.json.encode(content)

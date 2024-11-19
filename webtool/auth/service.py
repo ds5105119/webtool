@@ -26,31 +26,77 @@ class BaseJWTService(ABC):
 
         Parameters:
             data: must include 'sub' field.
+
+        Returns:
+            tuple[str, str]: Access, Refresh Token.
         """
         raise NotImplementedError
 
     @abstractmethod
-    async def validate_access_token(self, access_token: str, validate_exp=True) -> TokenData | None:
+    async def validate_access_token(self, access_token: str, validate_exp: bool = True) -> TokenData | None:
+        """
+        Validate Access Token.
+
+        Parameters:
+            access_token: Access Token.
+            validate_exp: Whether to validate expiration or not.
+
+        Returns:
+            TokenData: Access Token Data
+        """
         raise NotImplementedError
 
     @abstractmethod
-    async def validate_refresh_token(
-        self, access_token: str, refresh_token: str, validate_exp=True
-    ) -> TokenData | None:
+    async def validate_refresh_token(self, refresh_token: str, validate_exp: bool = True) -> TokenData | None:
+        """
+        Validate Refresh Token.
+
+        Parameters:
+            refresh_token: Access Token.
+            validate_exp: Whether to validate expiration or not.
+
+        Returns:
+            TokenData: Refresh Token Data
+        """
         raise NotImplementedError
 
     @abstractmethod
-    async def invalidate_token(self, access_token: str, refresh_token: str) -> bool:
+    async def invalidate_token(self, refresh_token: str) -> bool:
+        """
+        Invalidates the Refresh token and the Access token issued with it .
+
+        Parameters:
+            refresh_token: Access Token.
+
+        Returns:
+            bool: Returns `true` on success.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    async def update_token(self, data: dict, access_token: str, refresh_token: str) -> tuple[str, str] | None:
+    async def update_token(self, data: dict, refresh_token: str) -> tuple[str, str] | None:
+        """
+        Invalidates the Refresh token and the Access token issued with it and issue New Access and Refresh Tokens.
+
+        Parameters:
+            data: Token data.
+            refresh_token: Access Token.
+
+        Returns:
+            tuple[str, str]: Access, Refresh Token.
+        """
         raise NotImplementedError
 
 
 class JWTService(BaseJWTService):
     """
     generate access token, refresh token
+
+    Info:
+        Most cases, the `algorithm` parameter is automatically determined based on the `secret_key`,
+        so there is no need to specify the `algorithm`.
+        If using an asymmetric encryption key, providing the `secret_key` will automatically use the correct public key.
+        The `secret_key` can be generated using the `webtools.utils` package.
     """
 
     _CACHE_TOKEN_PREFIX = "jwt_"
@@ -131,6 +177,13 @@ class JWTService(BaseJWTService):
         return validated_data.get("extra")
 
     @staticmethod
+    def _validate_sub(token_data: TokenData) -> bool:
+        if token_data.get("sub"):
+            return True
+        else:
+            raise ValueError("The sub claim must be provided.")
+
+    @staticmethod
     def _validate_exp(token_data: TokenData) -> bool:
         exp = token_data.get("exp")
         now = time.time()
@@ -164,14 +217,15 @@ class JWTService(BaseJWTService):
 
         return token_data
 
-    def _create_token(self, data: dict, access_token: Optional[str] = None) -> str:
-        return self._jwt_manager.encode(data, self._secret_key, self.algorithm, access_token)
+    def _create_token(self, data: dict) -> str:
+        if self._private_key:
+            return self._jwt_manager.encode(data, self._private_key, self.algorithm)
+        return self._jwt_manager.encode(data, self._secret_key, self.algorithm)
 
-    def _decode_token(self, access_token: str, refresh_token: str | None = None) -> TokenData:
-        if refresh_token:
-            return self._jwt_manager.decode(refresh_token, self._secret_key, self.algorithm, access_token)
-        else:
-            return self._jwt_manager.decode(access_token, self._secret_key, self.algorithm)
+    def _decode_token(self, token: str, at_hash: str | None = None) -> TokenData:
+        if self._public_key:
+            return self._jwt_manager.decode(token, self._public_key, self.algorithm, at_hash)
+        return self._jwt_manager.decode(token, self._secret_key, self.algorithm, at_hash)
 
     async def _save_token_data(self, access_data: TokenData, refresh_data: TokenData) -> None:
         access_jti = self._get_jti(access_data)
@@ -209,16 +263,37 @@ class JWTService(BaseJWTService):
         await self._cache.delete(refresh_jti)
 
     async def create_token(self, data: dict) -> tuple[str, str]:
+        """
+        Create Access and Refresh Tokens.
+
+        Parameters:
+            data: must include 'sub' field.
+
+        Returns:
+            tuple[str, str]: Access, Refresh Token.
+        """
+        self._validate_sub(data)
+
         access_data = self._create_metadata(data, self.access_token_expire_time)
         refresh_data = self._create_metadata(data, self.refresh_token_expire_time)
 
         access_token = self._create_token(access_data)
-        refresh_token = self._create_token(refresh_data, access_token)
+        refresh_token = self._create_token(refresh_data)
         await self._save_token_data(access_data, refresh_data)
 
         return access_token, refresh_token
 
-    async def validate_access_token(self, access_token: str, validate_exp=True) -> TokenData | None:
+    async def validate_access_token(self, access_token: str, validate_exp: bool = True) -> TokenData | None:
+        """
+        Validate Access Token.
+
+        Parameters:
+            access_token: Access Token.
+            validate_exp: Whether to validate expiration or not.
+
+        Returns:
+            TokenData: Access Token Data
+        """
         access_data = self._decode_token(access_token)
 
         if validate_exp and not self._validate_exp(access_data):
@@ -232,10 +307,18 @@ class JWTService(BaseJWTService):
 
         return access_data
 
-    async def validate_refresh_token(
-        self, access_token: str, refresh_token: str, validate_exp=True
-    ) -> TokenData | None:
-        refresh_data = self._decode_token(access_token, refresh_token)
+    async def validate_refresh_token(self, refresh_token: str, validate_exp: bool = True) -> TokenData | None:
+        """
+        Validate Refresh Token.
+
+        Parameters:
+            refresh_token: Access Token.
+            validate_exp: Whether to validate expiration or not.
+
+        Returns:
+            TokenData: Refresh Token Data
+        """
+        refresh_data = self._decode_token(refresh_token)
         if validate_exp and not self._validate_exp(refresh_data):
             return None
 
@@ -246,8 +329,17 @@ class JWTService(BaseJWTService):
         refresh_data["extra"] |= cached_refresh_data
         return refresh_data
 
-    async def invalidate_token(self, access_token: str, refresh_token: str) -> bool:
-        refresh_data = await self.validate_refresh_token(access_token, refresh_token)
+    async def invalidate_token(self, refresh_token: str) -> bool:
+        """
+        Invalidates the Refresh token and the Access token issued with it .
+
+        Parameters:
+            refresh_token: Access Token.
+
+        Returns:
+            bool: Returns `true` on success.
+        """
+        refresh_data = await self.validate_refresh_token(refresh_token)
 
         if not refresh_data:
             return False
@@ -255,8 +347,18 @@ class JWTService(BaseJWTService):
         await self._invalidate_token_data(refresh_data)
         return True
 
-    async def update_token(self, data: dict, access_token: str, refresh_token: str) -> tuple[str, str] | None:
-        refresh_data = await self.validate_refresh_token(access_token, refresh_token)
+    async def update_token(self, data: dict, refresh_token: str) -> tuple[str, str] | None:
+        """
+        Invalidates the Refresh token and the Access token issued with it and issue New Access and Refresh Tokens.
+
+        Parameters:
+            data: Token data.
+            refresh_token: Access Token.
+
+        Returns:
+            tuple[str, str]: Access, Refresh Token.
+        """
+        refresh_data = await self.validate_refresh_token(refresh_token)
 
         if not refresh_data:
             return None
@@ -271,6 +373,16 @@ class JWTService(BaseJWTService):
 
 
 class RedisJWTService(JWTService):
+    """
+    generate access token, refresh token
+
+    Info:
+        Most cases, the `algorithm` parameter is automatically determined based on the `secret_key`,
+        so there is no need to specify the `algorithm`.
+        If using an asymmetric encryption key, providing the `secret_key` will automatically use the correct public key.
+        The `secret_key` can be generated using the `webtools.utils` package.
+    """
+
     _LUA_SAVE_TOKEN_SCRIPT = """
     -- PARAMETERS
     local refresh_token = KEYS[1]
@@ -426,11 +538,20 @@ class RedisJWTService(JWTService):
 
     async def invalidate_token(
         self,
-        access_token: str,
         refresh_token: str,
         refresh_jti_to_invalidate: str | None = None,
     ) -> bool:
-        refresh_data = await self.validate_refresh_token(access_token, refresh_token)
+        """
+        Invalidates the Refresh token and the Access token issued with it .
+
+        Parameters:
+            refresh_token: Access Token.
+            refresh_jti_to_invalidate: Refresh Token JTI to invalidate can be found using search_token.
+
+        Returns:
+            bool: Returns `true` on success.
+        """
+        refresh_data = await self.validate_refresh_token(refresh_token)
 
         if not refresh_data:
             return False
@@ -440,8 +561,17 @@ class RedisJWTService(JWTService):
 
         return await self._invalidate_token_data(refresh_data, refresh_jti_to_invalidate)
 
-    async def search_token(self, access_token: str, refresh_token: str):
-        refresh_data = self._decode_token(access_token, refresh_token)
+    async def search_token(self, refresh_token: str) -> list[bytes]:
+        """
+        Returns the JTI of the refresh token issued with the token’s sub claim
+
+        Parameters:
+            refresh_token: Access Token.
+
+        Returns:
+            list[bytes]: Returns a list containing JTIs on success.
+        """
+        refresh_data = self._decode_token(refresh_token)
         refresh_json = self._json_encoder.encode(refresh_data)
 
         return await self._search_script(
@@ -451,47 +581,3 @@ class RedisJWTService(JWTService):
                 self.refresh_token_expire_time,
             ],
         )
-
-
-async def main():
-    from webtool.cache.client import RedisCache
-
-    redis_jwt = RedisJWTService(RedisCache("redis://localhost:6379/0"))
-
-    user = {"sub": "100"}
-
-    access, refresh = await redis_jwt.create_token(user)
-    print(access, refresh)
-
-    a_data = await redis_jwt.validate_access_token(access)
-    print(a_data)
-
-    r_data = await redis_jwt.validate_refresh_token(access, refresh)
-    print(r_data)
-
-    new_access, new_refresh = await redis_jwt.update_token(user, access, refresh)
-
-    print(await redis_jwt.update_token(user, access, refresh))
-
-    a_data = await redis_jwt.validate_access_token(access)
-    print("만료된거", a_data)
-
-    r_data = await redis_jwt.validate_refresh_token(access, refresh)
-    print("만료된 리프레시", r_data)
-
-    a_data = await redis_jwt.validate_access_token(new_access)
-    print(a_data)
-
-    r_data = await redis_jwt.validate_refresh_token(new_access, new_refresh)
-    print(r_data)
-
-    x = await redis_jwt.search_token(new_access, new_refresh)
-    print(x)
-
-    print(await redis_jwt.update_token(user, access, refresh))
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())

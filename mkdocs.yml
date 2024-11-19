@@ -76,17 +76,19 @@ plugins:
           unwrap_annotated: true
           filters:
             - '!^_'
-          docstring_section_style: table
+          docstring_section_style: spacy
           signature_crossrefs: true
           show_symbol_type_heading: true
           show_symbol_type_toc: true
+          merge_init_into_class: true
 
 nav:
   - Home:
     - index.md
   - Reference:
     - Cache:
-      - Cache Client: learn/cache/client.md
+      - Client: learn/cache/client.md
+      - Lock: learn/cache/lock.md
     - JWT:
       - JWT Manager: learn/jwt/manager.md
       - JWT Service: learn/jwt/service.md

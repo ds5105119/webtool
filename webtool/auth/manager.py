@@ -9,7 +9,7 @@ class BaseJWTManager(ABC):
     Abstract base class for managing JSON Web Tokens (JWT).
     This class defines the interface for encoding and decoding JWT (RFC7519).
 
-    Note:
+    Info:
         대부분의 경우 해당 클래스의 하위 구현체를 직접 사용할 필요는 거의 없습니다.
     """
 
@@ -17,9 +17,8 @@ class BaseJWTManager(ABC):
     def encode(
         self,
         claims: dict,
-        secret_key: str,
+        secret_key: str | bytes,
         algorithm: str,
-        access_token: Optional[str] = None,
     ) -> str:
         """
         Encodes the specified claims into a JSON Web Token (JWT).
@@ -28,7 +27,6 @@ class BaseJWTManager(ABC):
             claims: A dictionary containing the claims to be included in the JWT.
             secret_key: The secret key used to sign the JWT.
             algorithm: The signing algorithm to be used for the JWT.
-            access_token: Optional parameter for additional handling of access tokens.
 
         Returns:
             str: A string representation of the encoded JWT.
@@ -43,9 +41,9 @@ class BaseJWTManager(ABC):
     def decode(
         self,
         token: str,
-        secret_key: str,
+        secret_key: str | bytes,
         algorithm: str,
-        access_token: Optional[str] = None,
+        at_hash: Optional[str] = None,
     ) -> dict | None:
         """
         Decodes a JSON Web Token (JWT) and validates its claims.
@@ -54,7 +52,7 @@ class BaseJWTManager(ABC):
             token: The JWT string to be decoded.
             secret_key: The secret key used to validate the JWT signature.
             algorithm: The signing algorithm used to verify the JWT,
-            access_token: Optional parameter for additional handling of access tokens.
+            at_hash: Optional parameter for additional handling of access tokens.
 
         Returns:
             dicy: A dictionary containing the claims if the token is valid, or None if the token is invalid or expired.
@@ -91,9 +89,8 @@ class JWTManager(BaseJWTManager):
     def encode(
         self,
         claims: dict,
-        secret_key: str,
+        secret_key: str | bytes,
         algorithm: str,
-        access_token: Optional[str] = None,
     ) -> str:
         """
         Encodes the specified claims into a JSON Web Token (JWT) with a specified expiration time.
@@ -101,21 +98,20 @@ class JWTManager(BaseJWTManager):
         Parameters:
             claims: A dictionary containing the claims to be included in the JWT.
             secret_key: The secret key used to sign the JWT.
-             algorithm: The signing algorithm to use for the JWT, defaults to 'ES384'.
-             access_token: Optional parameter for additional handling of access tokens.
+            algorithm: The signing algorithm to use for the JWT, defaults to 'ES384'.
 
         Returns:
             str: Json Web Token (JWT).
         """
 
-        return self.jwt.encode(claims, secret_key, algorithm=algorithm)
+        return self.jwt.encode(claims, secret_key)
 
     def decode(
         self,
         token: str,
-        secret_key: str,
+        secret_key: str | bytes,
         algorithm: str,
-        access_token: Optional[str] = None,
+        at_hash: Optional[str] = None,
         raise_error: bool = False,
     ) -> dict | None:
         """
@@ -125,7 +121,7 @@ class JWTManager(BaseJWTManager):
             token: The JWT string to be decoded.
             secret_key: The secret key used to validate the JWT signature.
             algorithm: The signing algorithm used for verification JWT, defaults to 'ES384'.
-            access_token: Optional parameter for additional handling of access tokens.
+            at_hash: Optional parameter for additional handling of access tokens.
             raise_error: Optional parameter for additional handling of error messages.
 
         Returns:
@@ -133,13 +129,23 @@ class JWTManager(BaseJWTManager):
         """
 
         try:
-            return self.jwt.decode(
+            res = self.jwt.decode(
                 token,
                 secret_key,
                 algorithms=[algorithm],
-                access_token=access_token,
             )
+
+            if at_hash and res.get("at_hash") != at_hash:
+                raise ValueError("Invalid token")
+
+            return res
+
         except jwt.InvalidTokenError as e:
+            if raise_error:
+                raise e
+            else:
+                return None
+        except ValueError as e:
             if raise_error:
                 raise e
             else:

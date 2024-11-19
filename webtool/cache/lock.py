@@ -51,11 +51,12 @@ class BaseLock(ABC):
 
 
 class AsyncInMemoryLock(BaseLock):
-    async def acquire(self):
+    async def acquire(self) -> bool:
         """
         if blocking is enabled, retry with Equal Jitter Backoff strategy
 
-        :return: True when acquired lock, else False
+        Returns:
+            bool: True when acquired lock, else False
         """
         self._key = sha256(self._key)
         start_time = asyncio.get_running_loop().time()
@@ -80,11 +81,12 @@ class AsyncInMemoryLock(BaseLock):
 
 
 class AsyncRedisLock(BaseLock):
-    async def acquire(self):
+    async def acquire(self) -> bool:
         """
         if blocking is enabled, retry with Equal Jitter Backoff strategy
 
-        :return: True when acquired lock, else False
+        Returns:
+            bool: True when acquired lock, else False
         """
         self._key = sha256(self._key)
         start_time = asyncio.get_running_loop().time()

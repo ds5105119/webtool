@@ -25,7 +25,6 @@ class BaseCache(ABC):
     """
 
     cache: Any
-    connection_pool = Any
 
     @abstractmethod
     async def lock(
@@ -36,6 +35,23 @@ class BaseCache(ABC):
         blocking_timeout: float = DEFAULT_CAP,
         blocking_sleep: float = DEFAULT_BASE,
     ) -> BaseLock:
+        """
+        Sets a key-value pair in a lock mechanism.
+
+        Parameters:
+            key: The key to be locked.
+            ttl_ms: The time-to-live for the lock in milliseconds.
+            blocking: If True, the method will block until the lock is acquired.
+            blocking_timeout: The maximum time in seconds to block while waiting for the lock to be acquired.
+            blocking_sleep: The time in seconds to wait between attempts to acquire the lock when blocking.
+
+        Returns:
+            BaseLock: The Lock object representing the acquired lock.
+
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
+        """
+
         raise NotImplementedError
 
     @abstractmethod
@@ -48,18 +64,22 @@ class BaseCache(ABC):
         nx: bool = False,
     ) -> Any:
         """
-        sets a key-value pair.
+        Sets a key-value pair.
 
-        :param key: The key for the data to be set.
-        :param value: The value associated with the key.
-        :param ex: Expiration time for the key, in seconds or as a timedelta.
-        :param exat: Expiration time as an absolute timestamp.
-        :param nx: if set to True, set the value at key to value only if it does not exist.
+        Parameters:
+            key: The key for the data to be set.
+            value: The value associated with the key.
+            ex: Expiration time for the key, in seconds or as a timedelta.
+            exat: Expiration time as an absolute timestamp.
+            nx: if set to True, set the value at key to value only if it does not exist.
 
-        :return: return of set.
+        Returns:
+            Any: return of set.
 
-        :raises NotImplementedError: If the method is not implemented in a subclass.
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
         """
+
         raise NotImplementedError
 
     @abstractmethod
@@ -68,13 +88,17 @@ class BaseCache(ABC):
         key: Union[bytes, str, memoryview],
     ) -> Any:
         """
-        gets a key-value pair.
+        Gets a key-value pair.
 
-        :param key: The key for the data to be set.
-        :return: return of get.
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            Any: return of get.
 
-        :raises NotImplementedError: If the method is not implemented in a subclass.
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
         """
+
         raise NotImplementedError
 
     @abstractmethod
@@ -83,21 +107,26 @@ class BaseCache(ABC):
         key: Union[bytes, str, memoryview],
     ) -> Any:
         """
-        deletes a key-value pair.
+        Deletes a key-value pair.
 
-        :param key: The key for the data to be set.
-        :return: None
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            None
 
-        :raises NotImplementedError: If the method is not implemented in a subclass.
+        Raises:
+             NotImplementedError: If the method is not implemented in a subclass.
         """
+
         raise NotImplementedError
 
     @abstractmethod
     async def aclose(self) -> None:
         """
-        Closes the Redis client connection and connection pool.
+        Closes Cache Client.
 
-        :raises NotImplementedError: If the method is not implemented in a subclass.
+        Raises:
+            NotImplementedError: If the method is not implemented in a subclass.
         """
 
         raise NotImplementedError
@@ -106,12 +135,11 @@ class BaseCache(ABC):
 class InMemoryCache(BaseCache):
     """
     Implementation of a InMemory client.
-    DO NOT USE IN PRODUCTION
+    DO NOT USE IN PRODUCTION.
     """
 
     def __init__(self):
         self.cache: dict = {}
-        self.connection_pool = None
 
     async def _expire(self) -> None:
         now = asyncio.get_event_loop().time()
@@ -124,7 +152,20 @@ class InMemoryCache(BaseCache):
         blocking: bool = True,
         blocking_timeout: float = DEFAULT_CAP,
         blocking_sleep: float = DEFAULT_BASE,
-    ) -> BaseLock:
+    ) -> AsyncInMemoryLock:
+        """
+        Sets a key-value pair in a lock mechanism.
+
+        Parameters:
+            key: The key to be locked.
+            ttl_ms: The time-to-live for the lock in milliseconds.
+            blocking: If True, the method will block until the lock is acquired.
+            blocking_timeout: The maximum time in seconds to block while waiting for the lock to be acquired.
+            blocking_sleep: The time in seconds to wait between attempts to acquire the lock when blocking.
+
+        Returns:
+            AsyncInMemoryLock: The Lock object representing the acquired lock.
+        """
         return AsyncInMemoryLock(self, key, ttl_ms, blocking, blocking_timeout, blocking_sleep)
 
     async def set(
@@ -135,6 +176,20 @@ class InMemoryCache(BaseCache):
         exat: Union[int, datetime, None] = None,
         nx: bool = False,
     ) -> Any:
+        """
+        Sets a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+            value: The value associated with the key.
+            ex: Expiration time for the key, in seconds or as a timedelta.
+            exat: Expiration time as an absolute timestamp.
+            nx: if set to True, set the value at key to value only if it does not exist.
+
+        Returns:
+            Any: return of set.
+        """
+
         await self._expire()
         if nx and self.cache.get(key):
             return None
@@ -160,6 +215,15 @@ class InMemoryCache(BaseCache):
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        """
+        Gets a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            Any: return of get.
+        """
+
         await self._expire()
 
         val = self.cache.get(key)
@@ -171,11 +235,24 @@ class InMemoryCache(BaseCache):
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        """
+        Deletes a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            None
+        """
+
         await self._expire()
 
         return self.cache.pop(key)
 
     async def aclose(self) -> None:
+        """
+        Closes the Cache client.
+        """
+
         self.cache.clear()
 
 
@@ -184,17 +261,18 @@ class RedisConfig:
     """
     Configuration settings for establishing a connection with a Redis server.
 
-    :param username (Optional[str]): username
-    :param password (Optional[str]): password
-    :param health_check_interval (int): Interval in seconds for performing health checks.
-    :param socket_timeout (float): Timeout in seconds for socket operations, including reads and writes.
-    :param socket_connect_timeout (float): Timeout in seconds for establishing a new connection to Redis.
-    :param socket_keepalive (bool): Whether to enable TCP keepalive for the connection. Default is True.
-    :param retry (Optional[Retry]): Retry policy for handling transient failures.
-    :param retry_on_error (Optional[list[type[Exception]]]): A list of exception types that should trigger a retry.
-    :param retry_on_timeout (bool): Whether to retry operations when a timeout occurs.
-    :param ssl (bool): Specifies if SSL should be used for the Redis connection.
-    :param protocol (Optional[int]): Redis protocol version to be used. Default is RESP3.
+    Parameters:
+        username (Optional[str]): username
+        password (Optional[str]): password
+        health_check_interval (int): Interval in seconds for performing health checks.
+        socket_timeout (float): Timeout in seconds for socket operations, including reads and writes.
+        socket_connect_timeout (float): Timeout in seconds for establishing a new connection to Redis.
+        socket_keepalive (bool): Whether to enable TCP keepalive for the connection. Default is True.
+        retry (Optional[Retry]): Retry policy for handling transient failures.
+        retry_on_error (Optional[list[type[Exception]]]): A list of exception types that should trigger a retry.
+        retry_on_timeout (bool): Whether to retry operations when a timeout occurs.
+        ssl (bool): Specifies if SSL should be used for the Redis connection.
+        protocol (Optional[int]): Redis protocol version to be used. Default is RESP3.
 
     Methods:
         to_dict() -> dict[str, Any]: Converts the configuration fields to a dictionary.
@@ -234,8 +312,9 @@ class RedisCache(BaseCache):
         """
         Initializes the Redis client.
 
-        :param redis_url: Redis data source name for connection.
-        :param connection_pool: Optional, an existing connection pool to use.
+        Parameters:
+            redis_url: Redis data source name for connection.
+            connection_pool: An existing connection pool to use.
         """
 
         self.logger = logger or logging.getLogger(__name__)
@@ -264,6 +343,19 @@ class RedisCache(BaseCache):
         blocking_timeout: float = DEFAULT_CAP,
         blocking_sleep: float = DEFAULT_BASE,
     ) -> AsyncRedisLock:
+        """
+        Sets a key-value pair in a lock mechanism.
+
+        Parameters:
+            key: The key to be locked.
+            ttl_ms: The time-to-live for the lock in milliseconds.
+            blocking: If True, the method will block until the lock is acquired.
+            blocking_timeout: The maximum time in seconds to block while waiting for the lock to be acquired.
+            blocking_sleep: The time in seconds to wait between attempts to acquire the lock when blocking.
+
+        Returns:
+            AsyncRedisLock: The Lock object representing the acquired lock.
+        """
         return AsyncRedisLock(self, key, ttl_ms, blocking, blocking_timeout, blocking_sleep)
 
     async def set(
@@ -274,21 +366,57 @@ class RedisCache(BaseCache):
         exat: Union[int, datetime, None] = None,
         nx: bool = False,
     ) -> Any:
+        """
+        Sets a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+            value: The value associated with the key.
+            ex: Expiration time for the key, in seconds or as a timedelta.
+            exat: Expiration time as an absolute timestamp.
+            nx: if set to True, set the value at key to value only if it does not exist.
+
+        Returns:
+            Any: return of set.
+        """
+
         return await self.cache.set(key, value, ex=ex, exat=exat, nx=nx)
 
     async def get(
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        """
+        Gets a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            Any: return of get.
+        """
+
         return await self.cache.get(key)
 
     async def delete(
         self,
         key: Union[bytes, str, memoryview],
     ) -> Any:
+        """
+        Deletes a key-value pair.
+
+        Parameters:
+            key: The key for the data to be set.
+        Returns:
+            None
+        """
+
         return await self.cache.delete(key)
 
     async def aclose(self) -> None:
+        """
+        Closes the Redis client connection and connection pool.
+        """
+
         self.logger.info(f"Closing Redis client connection (id: {id(self)})")
 
         try:
