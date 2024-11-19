@@ -16,7 +16,6 @@ packages = [{include = "webtool"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 redis = {extras = ["hiredis"], version = "^5.1.1"}
 argon2-cffi = "^23.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.10.0"}
