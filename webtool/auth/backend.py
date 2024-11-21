@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
-from dns.dnssec import validate
-
 from webtool.auth.models import AuthData
 from webtool.auth.service import BaseJWTService
 

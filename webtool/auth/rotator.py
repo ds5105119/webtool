@@ -51,29 +51,3 @@ class Scheduler:
         """Start the scheduler"""
         self._task = asyncio.create_task(self._wrapper())
         return self._task
-
-
-async def example_task(a, b, c):
-    """Example task to demonstrate the scheduler"""
-    import datetime
-
-    print(f"{datetime.datetime.now()} : Running scheduled task{a}{b}{c}")
-
-
-async def main():
-    """Demonstration of scheduler usage"""
-    # Create a scheduler that runs every 3 seconds
-    scheduler = Scheduler(3, example_task, func_kwargs={"a": 1, "b": 2, "c": 3})
-
-    # Run the scheduler
-    task = await scheduler.run()
-
-    # Let it run for 10 seconds
-    await asyncio.sleep(10)
-
-    # Cancel the scheduler
-    scheduler.cancel()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
