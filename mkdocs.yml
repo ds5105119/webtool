@@ -89,7 +89,7 @@ nav:
     - Auth:
       - JWT Manager: reference/auth/manager.md
       - JWT Service: reference/auth/service.md
-      - Backend: reference/throttle/backend.md
+      - Backend: reference/auth/backend.md
     - Throttle:
       - Decorator: reference/throttle/decorator.md
       - Limiter: reference/throttle/limiter.md
