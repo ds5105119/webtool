@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
+from dns.dnssec import validate
+
+from webtool.auth.models import AuthData
 from webtool.auth.service import BaseJWTService
 
 
@@ -45,34 +48,12 @@ class BaseBackend(ABC):
     """
 
     @abstractmethod
-    async def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> AuthData | None:
         """
         Performs authentication using the request scope.
 
         :param scope: ASGI request scope
         :return: Authentication data or None
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_identifier(self, authenticate_data: Any) -> str:
-        """
-        Extracts a unique identifier from the authenticated data.
-
-        :param authenticate_data: Data returned from authenticate() method
-        :return: String identifier
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_scope(self, authenticate_data: Any) -> list[str] | None:
-        """
-        Extracts a scope from the authenticated data.
-
-        :param authenticate_data: Data returned from authenticate() method
-        :return: list of scope
         """
 
         raise NotImplementedError
@@ -106,7 +87,7 @@ class IPBackend(BaseBackend):
     Authentication backend based on IP address
     """
 
-    async def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> AuthData | None:
         """
         Performs authentication using the client's IP address.
 
@@ -118,27 +99,9 @@ class IPBackend(BaseBackend):
         if client is None:
             return self._callback()
 
-        return client[0]
+        auth = AuthData(identifier=client[0])
 
-    def get_identifier(self, authenticate_data: Any) -> str:
-        """
-        Returns IP address as identifier.
-
-        :param authenticate_data: IP address
-        :return: IP address string
-        """
-
-        return authenticate_data
-
-    def get_scope(self, authenticate_data: Any) -> list[str] | None:
-        """
-        Returns scope.
-
-        :param authenticate_data: IP address
-        :return: None
-        """
-
-        return None
+        return auth
 
     @staticmethod
     def _callback():
@@ -183,7 +146,7 @@ class SessionBackend(BaseBackend):
 
         return session
 
-    async def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> AuthData | None:
         """
         Performs authentication using session information.
 
@@ -195,27 +158,9 @@ class SessionBackend(BaseBackend):
         if not session:
             return self._callback()
 
-        return session
+        auth = AuthData(identifier=session)
 
-    def get_identifier(self, authenticate_data: Any) -> str:
-        """
-        Uses session information as identifier.
-
-        :param authenticate_data: Session information
-        :return: Session string
-        """
-
-        return authenticate_data
-
-    def get_scope(self, authenticate_data: Any) -> list[str] | None:
-        """
-        Returns scope.
-
-        :param authenticate_data: Session information
-        :return: None
-        """
-
-        return None
+        return auth
 
     @staticmethod
     def _callback():
@@ -343,9 +288,12 @@ class JWTBackend(BaseBackend):
         if validated_token is None:
             return None
 
+        if validated_token.get("sub") is None:
+            return None
+
         return validated_token
 
-    async def authenticate(self, scope) -> Any | None:
+    async def authenticate(self, scope) -> AuthData | None:
         """
         Performs authentication using JWT.
 
@@ -361,27 +309,15 @@ class JWTBackend(BaseBackend):
         if validated_token is None:
             return self._callback()
 
-        return validated_token
+        validated_data = dict(validated_token)
 
-    def get_identifier(self, authenticate_data: Any) -> str:
-        """
-        Extracts JTI (JWT ID) from JWT claims.
+        auth = AuthData(
+            identifier=validated_data.pop("sub"),
+            scope=validated_data.get("scope", None),
+            extra=validated_data,
+        )
 
-        :param authenticate_data: JWT claims data
-        :return: JTI string
-        """
-
-        return authenticate_data.get("sub")
-
-    def get_scope(self, authenticate_data: Any) -> list[str] | None:
-        """
-        Returns scope.
-
-        :param authenticate_data: JWT claims data
-        :return: scope
-        """
-
-        return authenticate_data.get("scopes")
+        return auth
 
     @staticmethod
     def _callback():

@@ -104,7 +104,7 @@ class JWTManager(BaseJWTManager):
             str: Json Web Token (JWT).
         """
 
-        return self.jwt.encode(claims, secret_key)
+        return self.jwt.encode(claims, secret_key, algorithm)
 
     def decode(
         self,
@@ -129,11 +129,7 @@ class JWTManager(BaseJWTManager):
         """
 
         try:
-            res = self.jwt.decode(
-                token,
-                secret_key,
-                algorithms=[algorithm],
-            )
+            res = self.jwt.decode(token, secret_key, algorithms=[algorithm])
 
             if at_hash and res.get("at_hash") != at_hash:
                 raise ValueError("Invalid token")

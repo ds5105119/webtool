@@ -104,7 +104,7 @@ async def test_auth_throttle_4(jwt_service):
     async with AsyncClient(app=app, base_url="http://test") as ac:
 
         async def worker_1():
-            token_data = {"sub": uuid4().hex, "scopes": ["write"]}
+            token_data = {"sub": uuid4().hex, "scope": ["write"]}
             access_token, _ = await jwt_service.create_token(token_data)
 
             responses = []
@@ -114,7 +114,7 @@ async def test_auth_throttle_4(jwt_service):
             return responses
 
         async def worker_2():
-            token_data = {"sub": uuid4().hex, "scopes": ["read"]}
+            token_data = {"sub": uuid4().hex, "scope": ["read"]}
             access_token, _ = await jwt_service.create_token(token_data)
 
             responses = []

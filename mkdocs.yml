@@ -86,17 +86,20 @@ nav:
   - Home:
     - index.md
   - Reference:
-    - Cache:
-      - Client: learn/cache/client.md
-      - Lock: learn/cache/lock.md
-    - JWT:
-      - JWT Manager: learn/jwt/manager.md
-      - JWT Service: learn/jwt/service.md
+    - Auth:
+      - JWT Manager: reference/auth/manager.md
+      - JWT Service: reference/auth/service.md
+      - Backend: reference/throttle/backend.md
     - Throttle:
-      - Backend: learn/throttle/backend.md
-      - Decorator: learn/throttle/decorator.md
-      - Limiter: learn/throttle/limiter.md
-      - Middleware: learn/throttle/middleware.md
+      - Decorator: reference/throttle/decorator.md
+      - Limiter: reference/throttle/limiter.md
+      - Middleware: reference/throttle/middleware.md
+    - Cache:
+      - Client: reference/cache/client.md
+      - Lock: reference/cache/lock.md
+    - Utils:
+      - Key: reference/utils/key.md
+      - Json: reference/utils/json.md
 
   - Resources:
     - resources/CONTRIBUTING.md

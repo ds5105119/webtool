@@ -1,9 +1,17 @@
+import base64
 import os
+import secrets
 
-from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey, EllipticCurvePublicKey
+from cryptography.hazmat.primitives.asymmetric.ed448 import Ed448PrivateKey, Ed448PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+AllowedPrivateKeys = RSAPrivateKey | EllipticCurvePrivateKey | Ed25519PrivateKey | Ed448PrivateKey
+AllowedPublicKeys = RSAPublicKey | EllipticCurvePublicKey | Ed25519PublicKey | Ed448PublicKey
 
 
 def _save_key(data: bytes, filename: str, extension: str = ".pem") -> None:
@@ -37,8 +45,8 @@ def _serialize_key(
     return private_key
 
 
-def make_symmetric_key(save: bool = False) -> bytes:
-    key = Fernet.generate_key()
+def make_symmetric_key(key_bytes: int = 32, save: bool = False) -> bytes:
+    key = base64.urlsafe_b64encode(secrets.token_bytes(key_bytes))
 
     if save:
         _save_key(key, "symmetric_key")
@@ -85,13 +93,15 @@ def make_ec_key(algorithm: str = "ES256", save: bool = False, password: str | by
     return private_key
 
 
-def make_ed_key(curve: str = "ed25519", save: bool = False, password: str | bytes | None = None) -> bytes:
-    if curve == "ed25519":
+def make_ed_key(algorithm: str = "ed25519", save: bool = False, password: str | bytes | None = None) -> bytes:
+    algorithm = algorithm.upper()
+
+    if algorithm == "ED25519":
         private_key = ed25519.Ed25519PrivateKey.generate()
-    elif curve == "ed448":
+    elif algorithm == "ED448":
         private_key = ed448.Ed448PrivateKey.generate()
     else:
-        raise ValueError("Curve must be ed25519 or ed448")
+        raise ValueError("Curve must be Ed25519 or Ed448")
 
     private_key = _serialize_key(private_key, password=password)
 
@@ -101,7 +111,10 @@ def make_ed_key(curve: str = "ed25519", save: bool = False, password: str | byte
     return private_key
 
 
-def load_key(private_key: bytes, password: str | bytes | None = None) -> tuple[bytes, bytes, str] | None:
+def load_key(
+    private_key: bytes,
+    password: str | bytes | None = None,
+) -> tuple[AllowedPrivateKeys, AllowedPublicKeys, str] | None:
     if isinstance(password, str):
         password = password.encode("utf-8")
 
@@ -142,11 +155,5 @@ def load_key(private_key: bytes, password: str | bytes | None = None) -> tuple[b
             f"Unsupported key type: {type(private_key).__name__}. "
             "Supported key types are RSAPrivateKey, EllipticCurvePrivateKey, Ed25519PrivateKey, and Ed448PrivateKey."
         )
-
-    private_key = _serialize_key(private_key, password=None)
-    public_key = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
 
     return private_key, public_key, algorithm

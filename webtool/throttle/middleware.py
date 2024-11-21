@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from starlette.routing import BaseRoute, Match
 
-from webtool.throttle.backend import AnnoSessionBackend, BaseAnnoBackend, BaseBackend
+from webtool.auth.backend import AnnoSessionBackend, BaseAnnoBackend, BaseBackend
 from webtool.throttle.decorator import (
     THROTTLE_RULE_ATTR_NAME,
     LimitRule,
@@ -110,16 +110,16 @@ class LimitMiddleware:
         # auth check
         user_data = await self.auth_backend.authenticate(scope)
         if user_data is not None:
-            identifier = self.auth_backend.get_identifier(user_data)
-            user_scope = self.auth_backend.get_scope(user_data)
+            identifier = user_data.get_identifier()
+            user_scope = user_data.get_scope()
             rules = manager.should_limit(scope, user_identifier=identifier, auth_scope=user_scope)
             return await self.apply(scope, receive, send, identifier, rules)
 
         # anno check
         anno_data = await self.anno_backend.authenticate(scope)
         if anno_data is not None:
-            identifier = self.anno_backend.get_identifier(anno_data)
-            anno_scope = self.anno_backend.get_scope(anno_data)
+            identifier = anno_data.get_identifier()
+            anno_scope = anno_data.get_scope()
             rules = manager.should_limit(scope, anno_identifier=identifier, auth_scope=anno_scope)
             return await self.apply(scope, receive, send, identifier, rules)
 

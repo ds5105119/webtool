@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from starlette.middleware import Middleware
 
-from webtool.auth import JWTService, RedisJWTService
+from webtool.auth import JWTBackend, JWTService, RedisJWTService
 from webtool.cache import RedisCache
-from webtool.throttle import JWTBackend, LimitMiddleware, RedisLimiter, limiter
+from webtool.throttle import LimitMiddleware, RedisLimiter, limiter
 
 
 @pytest_asyncio.fixture(scope="session")
