@@ -39,6 +39,44 @@ def _get_cookie_value(cookie: str, name: str) -> str | None:
     return val
 
 
+def _get_authorization_scheme_param(authorization_header_value: Optional[str]) -> tuple[str, str]:
+    """
+    Separates scheme and token from Authorization header.
+
+    :param authorization_header_value: Authorization header value
+    :return: (scheme, token) tuple
+    """
+
+    if not authorization_header_value:
+        return "", ""
+    scheme, _, param = authorization_header_value.partition(" ")
+
+    return scheme, param
+
+
+def get_access_token(scope):
+    """
+    Extracts JWT from request scope.
+
+    :param scope: ASGI request scope
+    :return: (scheme, token) tuple or None
+    """
+
+    headers = scope.get("headers")
+    if headers is None:
+        return None
+
+    authorization_value = _get_header_value(headers, "authorization")
+    if authorization_value is None:
+        return None
+
+    scheme, param = _get_authorization_scheme_param(authorization_value)
+    if scheme.lower() != "bearer" or not param:
+        return None
+
+    return scheme, param
+
+
 class BaseBackend(ABC):
     """
     Abstract base class for authentication backends.
@@ -234,45 +272,6 @@ class JWTBackend(BaseBackend):
 
         self.jwt_service = jwt_service
 
-    @staticmethod
-    def _get_authorization_scheme_param(
-        authorization_header_value: Optional[str],
-    ) -> tuple[str, str]:
-        """
-        Separates scheme and token from Authorization header.
-
-        :param authorization_header_value: Authorization header value
-        :return: (scheme, token) tuple
-        """
-
-        if not authorization_header_value:
-            return "", ""
-        scheme, _, param = authorization_header_value.partition(" ")
-
-        return scheme, param
-
-    def get_token(self, scope):
-        """
-        Extracts JWT from request scope.
-
-        :param scope: ASGI request scope
-        :return: (scheme, token) tuple or None
-        """
-
-        headers = scope.get("headers")
-        if headers is None:
-            return None
-
-        authorization_value = _get_header_value(headers, "authorization")
-        if authorization_value is None:
-            return None
-
-        scheme, param = self._get_authorization_scheme_param(authorization_value)
-        if scheme.lower() != "bearer" or not param:
-            return None
-
-        return scheme, param
-
     async def validate_token(self, token):
         """
         Validates JWT.
@@ -299,7 +298,7 @@ class JWTBackend(BaseBackend):
         :return: Validated token data or None
         """
 
-        token_data = self.get_token(scope)
+        token_data = get_access_token(scope)
         if token_data is None:
             return self._callback()
 

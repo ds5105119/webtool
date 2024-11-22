@@ -111,7 +111,7 @@ def make_ed_key(algorithm: str = "ed25519", save: bool = False, password: str | 
     return private_key
 
 
-def load_key(
+def load_asymmetric_key(
     private_key: bytes,
     password: str | bytes | None = None,
 ) -> tuple[AllowedPrivateKeys, AllowedPublicKeys, str] | None:
@@ -157,3 +157,25 @@ def load_key(
         )
 
     return private_key, public_key, algorithm
+
+
+def load_key(
+    key: bytes | str,
+    password: str | bytes | None = None,
+) -> tuple[AllowedPrivateKeys, AllowedPublicKeys, str] | tuple[bytes | str, str] | None:
+    if isinstance(key, bytes):
+        key_cart = load_asymmetric_key(key, password)
+
+        if key_cart:
+            return key_cart
+
+    key_size = len(key)
+
+    if key_size < 48:
+        key, algorithm = key, "HS256"
+    elif key_size < 64:
+        key, algorithm = key, "HS384"
+    else:
+        key, algorithm = key, "HS512"
+
+    return key, algorithm
