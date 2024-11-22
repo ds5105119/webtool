@@ -110,6 +110,7 @@ class LimitMiddleware:
         # auth check
         user_data = await self.auth_backend.authenticate(scope)
         if user_data is not None:
+            scope["auth"] = user_data
             identifier = user_data.get_identifier()
             user_scope = user_data.get_scope()
             rules = manager.should_limit(scope, user_identifier=identifier, auth_scope=user_scope)
