@@ -1,13 +1,13 @@
 import time
-from typing import Any, Generic, NotRequired, ReadOnly, Required, TypedDict, TypeVar
+from typing import Any, Generic, NotRequired, Required, TypedDict, TypeVar
 from uuid import uuid4
 
 
 class Payload(TypedDict):
     sub: Required[str]
     exp: NotRequired[float]
-    iat: ReadOnly[NotRequired[float]]
-    jti: ReadOnly[NotRequired[str]]
+    iat: NotRequired[float]
+    jti: NotRequired[str]
     scope: NotRequired[list[str]]
     extra: NotRequired[dict[str, Any]]
 
