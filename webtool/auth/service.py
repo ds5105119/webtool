@@ -2,10 +2,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Generic, Optional
 
-from redis import Redis
-
 from webtool.auth.manager import BaseJWTManager, JWTManager
-from webtool.auth.models import Payload, PayloadFactory, PayloadType
+from webtool.auth.models import PayloadFactory, PayloadType
 from webtool.cache.client import BaseCache, RedisCache
 from webtool.utils.json import ORJSONDecoder, ORJSONEncoder
 from webtool.utils.key import load_key
@@ -35,7 +33,7 @@ class BaseJWTService(Generic[PayloadType], ABC):
             validate_exp: Whether to validate expiration or not.
 
         Returns:
-            Payload: Access Token Data
+            PayloadType: Access Token Data
         """
         raise NotImplementedError
 
@@ -49,7 +47,7 @@ class BaseJWTService(Generic[PayloadType], ABC):
             validate_exp: Whether to validate expiration or not.
 
         Returns:
-            Payload: Refresh Token Data
+            PayloadType: Refresh Token Data
         """
         raise NotImplementedError
 
