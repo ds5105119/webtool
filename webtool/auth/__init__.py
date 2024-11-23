@@ -11,4 +11,6 @@ __all__ = [
     "IPBackend",
     "JWTBackend",
     "SessionBackend",
+    "AuthData",
+    "Payload",
 ]
