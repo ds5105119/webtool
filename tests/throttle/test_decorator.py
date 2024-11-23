@@ -1,6 +1,6 @@
 from webtool.throttle.decorator import (
     THROTTLE_RULE_ATTR_NAME,
-    find_closure_rules_function,
+    _find_closure_rules_function,
     limiter,
 )
 
@@ -30,6 +30,6 @@ def test_decorator():
     def func():
         pass
 
-    rules = list(getattr(find_closure_rules_function(func), THROTTLE_RULE_ATTR_NAME).rules)
+    rules = list(getattr(_find_closure_rules_function(func), THROTTLE_RULE_ATTR_NAME).rules)
 
     assert len(rules) == 3

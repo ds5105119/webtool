@@ -8,7 +8,7 @@ from webtool.throttle.decorator import (
     THROTTLE_RULE_ATTR_NAME,
     LimitRule,
     LimitRuleManager,
-    find_closure_rules_function,
+    _find_closure_rules_function,
 )
 from webtool.throttle.limiter import RedisLimiter
 
@@ -112,7 +112,7 @@ class LimitMiddleware:
             return await self.anno_backend.verify_identity(scope, send)
 
         # find limit rule manager
-        handler = find_closure_rules_function(handler)
+        handler = _find_closure_rules_function(handler)
         if handler is None:
             return await self.app(scope, receive, send)
         manager: LimitRuleManager = getattr(handler, THROTTLE_RULE_ATTR_NAME)
