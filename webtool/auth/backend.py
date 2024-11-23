@@ -2,17 +2,18 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
-from webtool.auth.models import AuthData
+from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
 
 
-def _get_header_value(header, name: str) -> str | None:
+def _get_header_value(header: dict, name: str) -> str | None:
     """
     Extracts a specific header value from HTTP headers.
 
-    :param header: HTTP header dictionary
-    :param name: Name of the header to find
-    :return: Header value or None
+    Parameters:
+        header: HTTP header dictionary
+        name: Name of the header to find
+        Header value or None
     """
 
     header = {key.decode("utf-8").lower(): val for key, val in header}
@@ -28,9 +29,10 @@ def _get_cookie_value(cookie: str, name: str) -> str | None:
     """
     Extracts a specific cookie value from a cookie string.
 
-    :param cookie: Cookie string (e.g., "name1=value1; name2=value2")
-    :param name: Name of the cookie to find
-    :return: Cookie value or None
+    Parameters:
+        cookie: Cookie string (e.g., "name1=value1; name2=value2")
+        name: Name of the cookie to find
+        Cookie value or None
     """
 
     cookie = dict(c.split("=") for c in cookie.split("; "))
@@ -43,8 +45,11 @@ def _get_authorization_scheme_param(authorization_header_value: Optional[str]) -
     """
     Separates scheme and token from Authorization header.
 
-    :param authorization_header_value: Authorization header value
-    :return: (scheme, token) tuple
+    Parameters:
+        authorization_header_value: Authorization header value
+
+    Return:
+        tuple: scheme and token
     """
 
     if not authorization_header_value:
@@ -54,12 +59,15 @@ def _get_authorization_scheme_param(authorization_header_value: Optional[str]) -
     return scheme, param
 
 
-def get_access_token(scope):
+def _get_access_token(scope: dict):
     """
     Extracts JWT from request scope.
 
-    :param scope: ASGI request scope
-    :return: (scheme, token) tuple or None
+    Parameters:
+        scope: ASGI request scope
+
+    Returns:
+        (scheme, token) tuple or None
     """
 
     headers = scope.get("headers")
@@ -84,12 +92,15 @@ class BaseBackend(ABC):
     """
 
     @abstractmethod
-    async def authenticate(self, scope) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData | None:
         """
         Performs authentication using the request scope.
 
-        :param scope: ASGI request scope
-        :return: Authentication data or None
+        Parameters:
+            scope: ASGI request scope
+
+        Returns:
+            AuthData: Authentication data or None
         """
 
         raise NotImplementedError
@@ -107,6 +118,7 @@ class BaseBackend(ABC):
 class BaseAnnoBackend(BaseBackend):
     """
     Base backend class for handling anonymous users
+    The implementation of BaseAnnoBackend should include a function to identify unauthenticated users
     """
 
     @abstractmethod
@@ -123,12 +135,15 @@ class IPBackend(BaseBackend):
     Authentication backend based on IP address
     """
 
-    async def authenticate(self, scope) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData | None:
         """
         Performs authentication using the client's IP address.
 
-        :param scope: ASGI request scope
-        :return: IP address or None
+        Parameters:
+            scope: ASGI request scope
+
+        Returns:
+            AuthData: IP address or None
         """
 
         client = scope.get("client")
@@ -155,17 +170,21 @@ class SessionBackend(BaseBackend):
 
     def __init__(self, session_name: str):
         """
-        :param session_name: Name of the session cookie
+        Parameters:
+            session_name: Name of the session cookie
         """
 
         self.session_name = session_name
 
-    def get_session(self, scope):
+    def get_session(self, scope: dict) -> str | None:
         """
         Extracts session information from request scope.
 
-        :param scope: ASGI request scope
-        :return: Session value or None
+        Parameters:
+            scope: ASGI request scope
+
+        Returns:
+            Session string or None
         """
 
         headers = scope.get("headers")
@@ -182,12 +201,15 @@ class SessionBackend(BaseBackend):
 
         return session
 
-    async def authenticate(self, scope) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData | None:
         """
         Performs authentication using session information.
 
-        :param scope: ASGI request scope
-        :return: Session information or None
+        Parameters:
+            scope: ASGI request scope
+
+        Returns:
+            AuthData: IP address or None
         """
 
         session = self.get_session(scope)
@@ -215,18 +237,19 @@ class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
 
     def __init__(
         self,
-        session_name,
+        session_name: str,
         max_age: int = 1209600,
         secure: bool = True,
         same_site: Literal["lax", "strict", "none"] | None = "lax",
         session_factory: Optional[Callable] = uuid4,
     ):
         """
-        :param session_name: Name of the session cookie
-        :param max_age: Session expiration time (seconds)
-        :param secure: HTTPS only flag
-        :param same_site: SameSite cookie policy
-        :param session_factory: Session ID generation function
+        Parameters:
+            session_name: Name of the session cookie
+            max_age: Session expiration time (seconds)
+            secure: HTTPS only flag
+            same_site: SameSite cookie policy: lax, strict, none
+            session_factory: Session ID generation function
         """
 
         super().__init__(session_name)
@@ -236,12 +259,13 @@ class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
         if secure:
             self.security_flags += " secure;"
 
-    async def verify_identity(self, scope, send):
+    async def verify_identity(self, scope: dict, send: Callable) -> None:
         """
         Assigns new session to anonymous users and redirects.
 
-        :param scope: ASGI request scope
-        :param send: ASGI send function
+        Parameters:
+            scope: ASGI request scope
+            send: ASGI send function
         """
 
         await send(
@@ -267,17 +291,21 @@ class JWTBackend(BaseBackend):
 
     def __init__(self, jwt_service: "BaseJWTService"):
         """
-        :param jwt_service: Service object for JWT processing
+        Parameters:
+            jwt_service: Service object for JWT processing
         """
 
         self.jwt_service = jwt_service
 
-    async def validate_token(self, token):
+    async def validate_token(self, token: str) -> Payload | None:
         """
         Validates JWT.
 
-        :param token: JWT string
-        :return: Validated token data or None
+        Parameters:
+            token: JWT string
+
+        Returns:
+            Validated token data or None
         """
 
         validated_token = await self.jwt_service.validate_access_token(token)
@@ -290,15 +318,18 @@ class JWTBackend(BaseBackend):
 
         return validated_token
 
-    async def authenticate(self, scope) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData | None:
         """
         Performs authentication using JWT.
 
-        :param scope: ASGI request scope
-        :return: Validated token data or None
+        Parameters:
+            scope: ASGI request scope
+
+        Returns:
+            Validated token data or None
         """
 
-        token_data = get_access_token(scope)
+        token_data = _get_access_token(scope)
         if token_data is None:
             return self._callback()
 

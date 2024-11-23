@@ -123,6 +123,12 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
 
         self._verify_key_algorithm(key_algorithm)
 
+    def __call__(self):
+        """
+        Make the instance callable and return itself.
+        """
+        return self
+
     def _verify_key_algorithm(self, key_algorithm: str) -> None:
         """
         Verify that the loaded key's algorithm matches the expected algorithm.
@@ -213,6 +219,9 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
         """
         access_data = self._decode_token(access_token)
 
+        if not access_data:
+            return None
+
         if validate_exp and not self._validate_exp(access_data):
             return None
 
@@ -236,6 +245,9 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
             Optional[PayloadType]: Refresh Token Data
         """
         refresh_data = self._decode_token(refresh_token)
+
+        if not refresh_data:
+            return None
 
         if validate_exp and not self._validate_exp(refresh_data):
             return None

@@ -100,32 +100,33 @@ class LimitMiddleware:
         if handler is None:
             return await self.app(scope, receive, send)
 
+        # user identification
+        auth_data = await self.auth_backend.authenticate(scope)
+        if auth_data:
+            scope["auth"] = auth_data
+            user = True
+        else:
+            auth_data = await self.anno_backend.authenticate(scope)
+            user = False
+        if auth_data is None:
+            return await self.anno_backend.verify_identity(scope, send)
+
         # find limit rule manager
         handler = find_closure_rules_function(handler)
         if handler is None:
             return await self.app(scope, receive, send)
-
         manager: LimitRuleManager = getattr(handler, THROTTLE_RULE_ATTR_NAME)
 
         # auth check
-        user_data = await self.auth_backend.authenticate(scope)
-        if user_data is not None:
-            scope["auth"] = user_data
-            identifier = user_data.get_identifier()
-            user_scope = user_data.get_scope()
-            rules = manager.should_limit(scope, user_identifier=identifier, auth_scope=user_scope)
-            return await self.apply(scope, receive, send, identifier, rules)
+        identifier = auth_data.get_identifier()
+        auth_scope = auth_data.get_scope()
 
-        # anno check
-        anno_data = await self.anno_backend.authenticate(scope)
-        if anno_data is not None:
-            identifier = anno_data.get_identifier()
-            anno_scope = anno_data.get_scope()
-            rules = manager.should_limit(scope, anno_identifier=identifier, auth_scope=anno_scope)
-            return await self.apply(scope, receive, send, identifier, rules)
+        if user:
+            rules = manager.should_limit(scope, user_identifier=identifier, auth_scope=auth_scope)
+        else:
+            rules = manager.should_limit(scope, anno_identifier=identifier, auth_scope=auth_scope)
 
-        # issue limit identifier
-        return await self.anno_backend.verify_identity(scope, send)
+        return await self.apply(scope, receive, send, identifier, rules)
 
     async def apply(self, scope, receive, send, identifier: str, rules: list["LimitRule"]):
         """

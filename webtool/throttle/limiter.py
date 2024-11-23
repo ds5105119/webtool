@@ -12,9 +12,12 @@ class BaseLimiter(ABC):
         """
         Checks if any rate limits are exceeded.
 
-        :param identifier: User or session identifier
-        :param rules: List of rate limit rules to check
-        :return: List of waiting times until rate limits reset (empty if not exceeded)
+        Parameters:
+            identifier: User or session identifier
+            rules: List of rate limit rules to check
+
+        Returns:
+            list[float]: List of waiting times until rate limits reset (empty if not exceeded)
         """
 
         raise NotImplementedError
@@ -56,7 +59,8 @@ class RedisLimiter(BaseLimiter):
 
     def __init__(self, redis_cache: RedisCache):
         """
-        :param redis: Redis client instance
+        Parameters:
+             redis_cache: Redis client instance
         """
 
         self._cache = redis_cache.cache
@@ -69,9 +73,12 @@ class RedisLimiter(BaseLimiter):
         """
         Constructs a ruleset dictionary mapping keys to limits and intervals.
 
-        :param identifier: User or session identifier
-        :param rules: List of rate limit rules to apply
-        :return: Dictionary of {key: (max_requests, interval)}
+        Parameters:
+            identifier: User or session identifier
+            rules: List of rate limit rules to apply
+
+        Returns:
+            dict[str, tuple[int, int]]: Dictionary of {key: (max_requests, interval)}
         """
 
         ruleset = {identifier + rule.throttle_key: (rule.max_requests, rule.interval) for rule in rules}
@@ -82,8 +89,11 @@ class RedisLimiter(BaseLimiter):
         """
         Executes the rate limiting Lua script in Redis.
 
-        :param ruleset: Dictionary of rate limit rules
-        :return: Dictionary of updated counts and timestamps
+        Parameters:
+            ruleset: Dictionary of rate limit rules
+
+        Returns:
+            dict[str, list[int, int]]: Dictionary of updated counts and timestamps
         """
 
         now = asyncio.get_running_loop().time()
@@ -97,9 +107,12 @@ class RedisLimiter(BaseLimiter):
         """
         Checks if any rate limits are exceeded.
 
-        :param identifier: User or session identifier
-        :param rules: List of rate limit rules to check
-        :return: List of waiting times until rate limits reset (empty if not exceeded)
+        Parameters:
+            identifier: User or session identifier
+            rules: List of rate limit rules to check
+
+        Returns:
+            list[float]: List of waiting times until rate limits reset (empty if not exceeded)
         """
 
         ruleset = self._get_ruleset(identifier, rules)

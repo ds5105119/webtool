@@ -6,13 +6,16 @@ from webtool.utils.hash import sha256
 THROTTLE_RULE_ATTR_NAME = "_throttle_rules"
 
 
-def find_closure_rules_function(func):
+def _find_closure_rules_function(func):
     """
     Recursively finds a function with throttle rules in closure tree.
     Traverses through function closures using BFS.
 
-    :param func: Function to search from
-    :return: Function with throttle rules or None if not found
+    Parameters:
+        func: Function to search from
+
+    Returns:
+        func: Function with throttle rules or None if not found
     """
 
     queue = deque([func])
@@ -42,20 +45,23 @@ def limiter(
     throttle_key: Optional[str] = None,
     method: Optional[list[str]] = None,
     scopes: Optional[list[str]] = None,
-):
+) -> Callable:
     """
     Decorator for implementing rate limiting on functions.
 
-    :param max_requests: Maximum number of requests allowed in the interval
-    :param interval: Time interval in seconds (default: 3600)
-    :param throttle_key: Custom key for the rate limit (default: function path)
-    :param method: List of HTTP methods to apply limit to (optional)
-    :param scopes: List of user scopes to apply limit to (optional)
-    :return: Decorated function with rate limiting rules
+    Parameters:
+        max_requests: Maximum number of requests allowed in the interval
+        interval: Time interval in seconds (default: 3600)
+        throttle_key: Custom key for the rate limit (default: function path)
+        method: List of HTTP methods to apply limit to (optional)
+        scopes: List of user scopes to apply limit to (optional)
+
+    Returns:
+        Callable: Decorated function with rate limiting rules
     """
 
     def decorator(func):
-        exist_func = find_closure_rules_function(func)
+        exist_func = _find_closure_rules_function(func)
 
         key = throttle_key
         if exist_func:
@@ -113,11 +119,12 @@ class LimitRule:
         scopes: Optional[list[str]],
     ):
         """
-        :param max_requests: Maximum number of requests allowed
-        :param interval: Time interval in seconds
-        :param throttle_key: Unique identifier for this rule
-        :param method: List of HTTP methods this rule applies to
-        :param scopes: List of user scopes this rule applies to
+        Parameters:
+            max_requests: Maximum number of requests allowed
+            interval: Time interval in seconds
+            throttle_key: Unique identifier for this rule
+            method: List of HTTP methods this rule applies to
+            scopes: List of user scopes this rule applies to
         """
 
         self.max_requests: int = max_requests
@@ -144,19 +151,22 @@ class LimitRule:
 
     def is_enabled(
         self,
-        scope,
+        scope: dict,
         anno_identifier: Any | None = None,
         user_identifier: Any | None = None,
         auth_scope: list[str] | None = None,
-    ):
+    ) -> bool:
         """
         Checks if this rule should be applied based on request context.
 
-        :param scope: ASGI request scope
-        :param anno_identifier: Anonymous user identifier
-        :param user_identifier: Authenticated user identifier (optional)
-        :param auth_scope: List of user scopes this rule applies to
-        :return: Boolean indicating if rule should be applied
+        Parameters:
+            scope: ASGI request scope
+            anno_identifier: Anonymous user identifier
+            user_identifier: Authenticated user identifier (optional)
+            auth_scope: List of user scopes this rule applies to
+
+        Returns:
+            bool: indicating if rule should be applied
         """
 
         if self.method and scope.get("method") not in self.method:
@@ -184,7 +194,7 @@ class LimitRuleManager:
 
     def should_limit(
         self,
-        scopes,
+        scope: dict,
         anno_identifier: Any | None = None,
         user_identifier: Any | None = None,
         auth_scope: list[str] | None = None,
@@ -192,14 +202,17 @@ class LimitRuleManager:
         """
         Determines which rules should be applied for a given request.
 
-        :param scopes: ASGI request scope
-        :param anno_identifier: Anonymous user identifier (optional)
-        :param user_identifier: Authenticated user identifier (optional)
-        :param auth_scope: List of user scopes this rule applies to
-        :return: List of applicable rules
+        Parameters:
+            scope: ASGI request scope
+            anno_identifier: Anonymous user identifier (optional)
+            user_identifier: Authenticated user identifier (optional)
+            auth_scope: List of user scopes this rule applies to
+
+        Returns:
+            List of applicable rules
         """
 
-        rules = [rule for rule in self.rules if rule.is_enabled(scopes, anno_identifier, user_identifier, auth_scope)]
+        rules = [rule for rule in self.rules if rule.is_enabled(scope, anno_identifier, user_identifier, auth_scope)]
 
         return rules
 
@@ -207,7 +220,8 @@ class LimitRuleManager:
         """
         Adds a new rate limit rule to the collection.
 
-        :param rule: LimitRule instance to add
+        Parameters:
+            rule: LimitRule instance to add
         """
 
         self.rules.add(rule)

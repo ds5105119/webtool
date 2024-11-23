@@ -85,11 +85,14 @@ plugins:
 nav:
   - Home:
     - index.md
+  - Learn:
+    - Getting Started: learn/index.md
   - Reference:
     - Auth:
       - JWT Manager: reference/auth/manager.md
       - JWT Service: reference/auth/service.md
       - Backend: reference/auth/backend.md
+      - Models: reference/auth/models.md
     - Throttle:
       - Decorator: reference/throttle/decorator.md
       - Limiter: reference/throttle/limiter.md

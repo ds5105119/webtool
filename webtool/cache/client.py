@@ -141,6 +141,12 @@ class InMemoryCache(BaseCache):
     def __init__(self):
         self.cache: dict = {}
 
+    def __call__(self):
+        """
+        Make the instance callable and return itself.
+        """
+        return self
+
     async def _expire(self) -> None:
         now = asyncio.get_event_loop().time()
         self.cache = {k: v for k, v in self.cache.items() if v[1] > now}
@@ -331,9 +337,15 @@ class RedisCache(BaseCache):
             )
             self.connection_pool = ConnectionPool.from_url(redis_url, **kwargs)
         else:
-            raise TypeError("RedisClient must be provided with either redis_dsn or connection_pool")
+            raise TypeError("RedisClient must be provided with either redis_url or connection_pool")
 
         self.cache: Redis = Redis.from_pool(self.connection_pool)
+
+    def __call__(self):
+        """
+        Make the instance callable and return itself.
+        """
+        return self
 
     def lock(
         self,

@@ -18,7 +18,7 @@ class AuthData:
         self.scope = scope
         self.extra = extra
 
-    def get_identifier(self):
+    def get_identifier(self) -> str:
         """
         Extracts a unique identifier from the authenticated data.
 
@@ -27,7 +27,7 @@ class AuthData:
         """
         return self.identifier
 
-    def get_scope(self):
+    def get_scope(self) -> list[str]:
         """
         Extracts a scope from the authenticated data.
 

@@ -40,9 +40,9 @@ Rate limiting system for FastAPI/Starlette applications.
 ```python
 from fastapi import FastAPI
 from starlette.middleware import Middleware
-from webtool.auth import JWTService
+from webtool.auth import JWTService, JWTBackend
 from webtool.cache import RedisCache
-from webtool.throttle import limiter, LimitMiddleware, JWTBackend
+from webtool.throttle import limiter, LimitMiddleware
 
 cache = RedisCache("redis://127.0.0.1:6379/0")
 jwt_backend = JWTBackend(JWTService(cache, secret_key="test"))
@@ -69,7 +69,7 @@ async def get_resource():
 MessagePack-based response.
 
 ```python
-from webtool.utils import MsgSpecJSONResponse
+from webtool.utils.response import MsgSpecJSONResponse
 from fastapi import FastAPI
 
 app = FastAPI(
