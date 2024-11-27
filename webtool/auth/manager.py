@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import jwt
+import jwt as pyjwt
 
 
 class BaseJWTManager(ABC):
@@ -70,7 +70,7 @@ class JWTManager(BaseJWTManager):
     """
 
     def __init__(self):
-        self.jwt = jwt.PyJWT(self._get_default_options())
+        self.jwt = pyjwt.PyJWT(self._get_default_options())
 
     @staticmethod
     def _get_default_options() -> dict[str, bool | list[str]]:
@@ -136,7 +136,7 @@ class JWTManager(BaseJWTManager):
 
             return res
 
-        except jwt.InvalidTokenError as e:
+        except pyjwt.InvalidTokenError as e:
             if raise_error:
                 raise e
             else:
