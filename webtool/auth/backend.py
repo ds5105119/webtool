@@ -255,7 +255,7 @@ class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
         super().__init__(session_name)
 
         self.session_factory = session_factory
-        self.security_flags = f"path=/; httponly; samesite={same_site}; Max-Age={max_age};"
+        self.security_flags = f"httponly; samesite={same_site}; Max-Age={max_age};"
         if secure:
             self.security_flags += " secure;"
 

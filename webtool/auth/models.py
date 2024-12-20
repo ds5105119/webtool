@@ -13,28 +13,12 @@ class Payload(TypedDict):
 
 
 class AuthData:
+    __slots__ = ["identifier", "scope", "extra"]
+
     def __init__(self, identifier: str | None, scope: list[str] | None = None, extra: dict | None = None):
         self.identifier = identifier
         self.scope = scope
         self.extra = extra
-
-    def get_identifier(self) -> str:
-        """
-        Extracts a unique identifier from the authenticated data.
-
-        Returns:
-            String identifier
-        """
-        return self.identifier
-
-    def get_scope(self) -> list[str]:
-        """
-        Extracts a scope from the authenticated data.
-
-        Returns:
-            list of scope
-        """
-        return self.scope
 
 
 PayloadType = TypeVar("PayloadType", bound=Payload)

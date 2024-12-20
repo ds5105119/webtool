@@ -174,15 +174,6 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
 
     async def _invalidate_token_data(self, validated_refresh_data: PayloadType) -> None:
         key = self._get_key(JWTService._CACHE_TOKEN_PREFIX, validated_refresh_data)
-        refresh_exp = self._get_exp(validated_refresh_data)
-        refresh_extra = self._get_extra(validated_refresh_data)
-        access_key = f"{JWTService._CACHE_INVALIDATE_PREFIX}{refresh_extra.get('access_jti')}"
-        access_exp = refresh_exp - self.refresh_token_expire_time + self.access_token_expire_time
-
-        now = time.time()
-        if access_exp > now:
-            await self._cache.set(access_key, 1, exat=int(access_exp) + 1, nx=True)
-
         await self._cache.delete(key)
 
     async def create_token(self, data: dict) -> tuple[str, str]:
@@ -223,12 +214,6 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
             return None
 
         if validate_exp and not self._validate_exp(access_data):
-            return None
-
-        access_jti = self._get_jti(access_data)
-        key = f"{JWTService._CACHE_INVALIDATE_PREFIX}{access_jti}"
-
-        if await self._cache.get(key):
             return None
 
         return access_data
@@ -377,13 +362,6 @@ class RedisJWTService(JWTService, Generic[PayloadType]):
         -- INVALIDATE ORIGINAL ACCESS, REFRESH TOKEN
         access_jti = refresh_token['extra']['access_jti']
         refresh_to_invalidate_issue_time = refresh_token['exp'] - refresh_token_expire_time
-    end
-
-    -- MARK THE ACCESS TOKEN AS EXPIRED
-    local access_exp = refresh_to_invalidate_issue_time + access_token_expire_time
-    if access_exp > now then
-        key = "jwt_invalidate_" .. access_jti
-        redis.call('SET', key, 1, 'EXAT', math.ceil(access_exp))
     end
     
     -- DELETE REFRESH TOKEN DATA FOR VALIDATION

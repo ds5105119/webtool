@@ -77,7 +77,6 @@ class LimitMiddleware:
 
         self.app = app
         self.limiter = RedisLimiter(cache)
-        self.limit = None
         self.auth_backend = auth_backend
         self.anno_backend = anno_backend or AnnoSessionBackend("th-session")
 
@@ -118,8 +117,8 @@ class LimitMiddleware:
         manager: LimitRuleManager = getattr(handler, THROTTLE_RULE_ATTR_NAME)
 
         # auth check
-        identifier = auth_data.get_identifier()
-        auth_scope = auth_data.get_scope()
+        identifier = auth_data.identifier
+        auth_scope = auth_data.scope
 
         if user:
             rules = manager.should_limit(scope, user_identifier=identifier, auth_scope=auth_scope)
