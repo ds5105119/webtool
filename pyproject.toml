@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "webtool"
-version = "0.0.12"
+version = "0.0.13"
 description = "FastAPI/Starlette library for authentication, throttling, caching."
 license = "Apache-2.0"
 authors = [
@@ -20,7 +20,7 @@ redis = {extras = ["hiredis"], version = "^5.1.1"}
 argon2-cffi = "^23.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.10.0"}
 orjson = "^3.10.11"
-python-keycloak = "^4.7.2"
+python-keycloak = "^5.1.1"
 sqlalchemy = "^2.0.36"
 
 
