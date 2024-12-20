@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/ds5105119/logo/refs/heads/main/logo%20round.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.46">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
     
     
       
@@ -2661,7 +2661,7 @@ Automatically creates and assigns new sessions.</p>
 </span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">session_name</span><span class="p">)</span>
 </span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a>
 </span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">session_factory</span> <span class="o">=</span> <span class="n">session_factory</span>
-</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">security_flags</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;path=/; httponly; samesite=</span><span class="si">{</span><span class="n">same_site</span><span class="si">}</span><span class="s2">; Max-Age=</span><span class="si">{</span><span class="n">max_age</span><span class="si">}</span><span class="s2">;&quot;</span>
+</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">security_flags</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;httponly; samesite=</span><span class="si">{</span><span class="n">same_site</span><span class="si">}</span><span class="s2">; Max-Age=</span><span class="si">{</span><span class="n">max_age</span><span class="si">}</span><span class="s2">;&quot;</span>
 </span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a>    <span class="k">if</span> <span class="n">secure</span><span class="p">:</span>
 </span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">security_flags</span> <span class="o">+=</span> <span class="s2">&quot; secure;&quot;</span>
 </span></code></pre></div></td></tr></table></div>
@@ -2732,7 +2732,9 @@ Automatically creates and assigns new sessions.</p>
   </span>
 
 <a href="#webtool.auth.backend.AnnoSessionBackend.security_flags" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">security_flags</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;path=/; httponly; samesite=</span><span class="si">{</span><span class="n">same_site</span><span class="si">}</span><span class="s2">; Max-Age=</span><span class="si">{</span><span class="n">max_age</span><span class="si">}</span><span class="s2">;&quot;</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">security_flags</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sa">f</span><span class="s2">&quot;httponly; samesite=</span><span class="si">{</span><span class="n">same_site</span><span class="si">}</span><span class="s2">; Max-Age=</span><span class="si">{</span><span class="n">max_age</span><span class="si">}</span><span class="s2">;&quot;</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3527,7 +3529,7 @@ Automatically creates and assigns new sessions.</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "header.autohide", "navigation.tabs", "navigation.expand", "navigation.path", "search.suggest", "search.highlight", "toc.follow"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.88dd0f4e.min.js"></script>
       
     
   </body>
