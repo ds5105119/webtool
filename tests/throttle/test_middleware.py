@@ -6,12 +6,12 @@ from uuid import uuid4
 import pytest
 from httpx import AsyncClient
 
-from .conftest import app
+from .conftest import transport
 
 
 @pytest.mark.asyncio(scope="session")
 async def test_anno_throttle_1():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
 
         async def worker_1():
             first_response = await ac.get("/2/", follow_redirects=False)
@@ -42,7 +42,7 @@ async def test_anno_throttle_1():
 
 @pytest.mark.asyncio(scope="session")
 async def test_anno_throttle_2():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
 
         async def worker_1():
             first_response = await ac.get("/3/", follow_redirects=False)
@@ -71,7 +71,7 @@ async def test_anno_throttle_2():
 
 @pytest.mark.asyncio(scope="session")
 async def test_auth_throttle_3(jwt_service):
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
 
         async def worker_1():
             token_data = {"sub": uuid4().hex}
@@ -101,7 +101,7 @@ async def test_auth_throttle_3(jwt_service):
 
 @pytest.mark.asyncio(scope="session")
 async def test_auth_throttle_4(jwt_service):
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
 
         async def worker_1():
             token_data = {"sub": uuid4().hex, "scope": ["write"]}

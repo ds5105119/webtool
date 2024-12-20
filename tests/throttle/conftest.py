@@ -1,3 +1,4 @@
+import httpx
 import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
@@ -77,3 +78,6 @@ async def api_3():
 @limiter(2, 10, scopes=["anno"])
 async def api_4():
     return {"msg": "Hello World"}
+
+
+transport = httpx.ASGITransport(app=app, client=("127.0.0.1", 8000))
