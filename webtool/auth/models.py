@@ -15,7 +15,7 @@ class Payload(TypedDict):
 class AuthData:
     __slots__ = ["identifier", "scope", "extra"]
 
-    def __init__(self, identifier: str | None, scope: list[str] | None = None, extra: dict | None = None):
+    def __init__(self, identifier: Any | None, scope: list[str] | None = None, extra: dict | None = None):
         self.identifier = identifier
         self.scope = scope
         self.extra = extra

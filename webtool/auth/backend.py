@@ -6,7 +6,7 @@ from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
 
 
-def _get_header_value(header: dict, name: str) -> str | None:
+def _get_header_value(header: dict, name: bytes) -> bytes | None:
     """
     Extracts a specific header value from HTTP headers.
 
@@ -16,16 +16,16 @@ def _get_header_value(header: dict, name: str) -> str | None:
         Header value or None
     """
 
-    header = {key.decode("utf-8").lower(): val for key, val in header}
+    header = dict(header)
     val = header.get(name)
 
     if val is None:
         return val
 
-    return val.decode("utf-8")
+    return val
 
 
-def _get_cookie_value(cookie: str, name: str) -> str | None:
+def _get_cookie_value(cookie: bytes, name: bytes) -> str | None:
     """
     Extracts a specific cookie value from a cookie string.
 
@@ -35,13 +35,16 @@ def _get_cookie_value(cookie: str, name: str) -> str | None:
         Cookie value or None
     """
 
-    cookie = dict(c.split("=") for c in cookie.split("; "))
+    cookie = dict(c.split(b"=") for c in cookie.split(b"; "))
     val = cookie.get(name)
 
-    return val
+    if val is None:
+        return None
+
+    return val.decode()
 
 
-def _get_authorization_scheme_param(authorization_header_value: Optional[str]) -> tuple[str, str]:
+def _get_authorization_scheme_param(authorization_header_value: Optional[bytes]) -> tuple[bytes, bytes]:
     """
     Separates scheme and token from Authorization header.
 
@@ -53,8 +56,8 @@ def _get_authorization_scheme_param(authorization_header_value: Optional[str]) -
     """
 
     if not authorization_header_value:
-        return "", ""
-    scheme, _, param = authorization_header_value.partition(" ")
+        return b"", b""
+    scheme, _, param = authorization_header_value.partition(b" ")
 
     return scheme, param
 
@@ -74,12 +77,12 @@ def _get_access_token(scope: dict):
     if headers is None:
         return None
 
-    authorization_value = _get_header_value(headers, "authorization")
+    authorization_value = _get_header_value(headers, b"authorization")
     if authorization_value is None:
         return None
 
     scheme, param = _get_authorization_scheme_param(authorization_value)
-    if scheme.lower() != "bearer" or not param:
+    if scheme.lower() != b"bearer" or not param:
         return None
 
     return scheme, param
@@ -191,11 +194,11 @@ class SessionBackend(BaseBackend):
         if headers is None:
             return None
 
-        cookie = _get_header_value(headers, "cookie")
+        cookie = _get_header_value(headers, b"cookie")
         if cookie is None:
             return None
 
-        session = _get_cookie_value(cookie, self.session_name)
+        session = _get_cookie_value(cookie, self.session_name.encode())
         if session is None:
             return None
 
@@ -333,7 +336,7 @@ class JWTBackend(BaseBackend):
         if token_data is None:
             return self._callback()
 
-        validated_token = await self.validate_token(token_data[1])
+        validated_token = await self.validate_token(token_data[1].decode())
         if validated_token is None:
             return self._callback()
 
