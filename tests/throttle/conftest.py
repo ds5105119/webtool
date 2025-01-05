@@ -1,8 +1,8 @@
-from typing import Annotated, Any
+from typing import Any
 
 import httpx
 import pytest_asyncio
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.security import HTTPBearer
 from starlette.middleware import Middleware
