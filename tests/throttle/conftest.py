@@ -1,7 +1,10 @@
+from typing import Annotated, Any
+
 import httpx
 import pytest_asyncio
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import ORJSONResponse
+from fastapi.security import HTTPBearer
 from starlette.middleware import Middleware
 
 from webtool.auth import JWTBackend, JWTService, RedisJWTService
@@ -39,9 +42,17 @@ def backend(jwt_service):
     return backend
 
 
+class ExtendHTTPBearer(HTTPBearer):
+    async def __call__(self, request: Request) -> Any | None:
+        print(request.scope)
+        auth = request.scope.get("auth")
+        return auth
+
+
 global_cache = RedisCache("redis://127.0.0.1:6379/0")
 global_service = JWTService(global_cache, secret_key="test")
 global_backend = JWTBackend(global_service)
+bearer_scheme = ExtendHTTPBearer()
 
 app = FastAPI(
     middleware=[

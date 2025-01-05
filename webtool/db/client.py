@@ -27,7 +27,6 @@ class SyncDB:
         with self.session_factory() as session:
             try:
                 yield session
-                session.commit()
             except exc.SQLAlchemyError as error:
                 session.rollback()
                 raise error
@@ -76,7 +75,6 @@ class AsyncDB:
         async with self.session_factory() as session:
             try:
                 yield session
-                await session.commit()
             except exc.SQLAlchemyError as error:
                 await session.rollback()
                 raise error
