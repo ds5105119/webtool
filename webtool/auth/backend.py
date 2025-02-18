@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
+from keycloak import KeycloakOpenIDConnection
+
 from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
 
@@ -75,15 +77,15 @@ def _get_access_token(scope: dict):
 
     headers = scope.get("headers")
     if headers is None:
-        return None
+        raise ValueError("Cannot extract JWT from scope")
 
     authorization_value = _get_header_value(headers, b"authorization")
     if authorization_value is None:
-        return None
+        raise ValueError("Cannot extract JWT from scope")
 
     scheme, param = _get_authorization_scheme_param(authorization_value)
     if scheme.lower() != b"bearer" or not param:
-        return None
+        raise ValueError("Cannot extract JWT from scope")
 
     return scheme, param
 
@@ -95,7 +97,7 @@ class BaseBackend(ABC):
     """
 
     @abstractmethod
-    async def authenticate(self, scope: dict) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData:
         """
         Performs authentication using the request scope.
 
@@ -103,16 +105,7 @@ class BaseBackend(ABC):
             scope: ASGI request scope
 
         Returns:
-            AuthData: Authentication data or None
-        """
-
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def _callback():
-        """
-        Callback method called when authentication fails
+            Payload: Authentication data or None
         """
 
         raise NotImplementedError
@@ -138,7 +131,7 @@ class IPBackend(BaseBackend):
     Authentication backend based on IP address
     """
 
-    async def authenticate(self, scope: dict) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData:
         """
         Performs authentication using the client's IP address.
 
@@ -151,19 +144,9 @@ class IPBackend(BaseBackend):
 
         client = scope.get("client")
         if client is None:
-            return self._callback()
+            raise ValueError("Authentication Failed")
 
-        auth = AuthData(identifier=client[0])
-
-        return auth
-
-    @staticmethod
-    def _callback():
-        """
-        Returns None when IP authentication fails.
-        """
-
-        return None
+        return AuthData(identifier=client[0])
 
 
 class SessionBackend(BaseBackend):
@@ -204,7 +187,7 @@ class SessionBackend(BaseBackend):
 
         return session
 
-    async def authenticate(self, scope: dict) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData:
         """
         Performs authentication using session information.
 
@@ -212,24 +195,14 @@ class SessionBackend(BaseBackend):
             scope: ASGI request scope
 
         Returns:
-            AuthData: IP address or None
+            AuthData: session
         """
 
         session = self.get_session(scope)
         if not session:
-            return self._callback()
+            raise ValueError("Authentication Failed")
 
-        auth = AuthData(identifier=session)
-
-        return auth
-
-    @staticmethod
-    def _callback():
-        """
-        Returns None when session authentication fails.
-        """
-
-        return None
+        return AuthData(identifier=session)
 
 
 class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
@@ -300,7 +273,7 @@ class JWTBackend(BaseBackend):
 
         self.jwt_service = jwt_service
 
-    async def validate_token(self, token: str) -> Payload | None:
+    async def validate_token(self, token: str) -> Payload:
         """
         Validates JWT.
 
@@ -313,15 +286,12 @@ class JWTBackend(BaseBackend):
 
         validated_token = await self.jwt_service.validate_access_token(token)
 
-        if validated_token is None:
-            return None
-
-        if validated_token.get("sub") is None:
-            return None
+        if validated_token is None or validated_token.get("sub") is None:
+            raise ValueError("Authentication Failed")
 
         return validated_token
 
-    async def authenticate(self, scope: dict) -> AuthData | None:
+    async def authenticate(self, scope: dict) -> AuthData:
         """
         Performs authentication using JWT.
 
@@ -332,28 +302,18 @@ class JWTBackend(BaseBackend):
             Validated token data or None
         """
 
-        token_data = _get_access_token(scope)
-        if token_data is None:
-            return self._callback()
+        scheme, param = _get_access_token(scope)
+        validated_token = await self.validate_token(param.decode())
 
-        validated_token = await self.validate_token(token_data[1].decode())
-        if validated_token is None:
-            return self._callback()
+        return AuthData(identifier=validated_token.pop("sub"), data=validated_token)
 
-        validated_data = dict(validated_token)
 
-        auth = AuthData(
-            identifier=validated_data.pop("sub"),
-            scope=validated_data.get("scope", None),
-            extra=validated_data,
-        )
+class KeycloakBackend(BaseBackend):
+    def __init__(self, keycloak_connection: KeycloakOpenIDConnection):
+        self.keycloak_connection = keycloak_connection
 
-        return auth
+    async def authenticate(self, scope: dict) -> AuthData:
+        scheme, param = _get_access_token(scope)
+        validated_token = self.keycloak_connection.keycloak_openid.decode_token(param.decode())
 
-    @staticmethod
-    def _callback():
-        """
-        Returns None when JWT authentication fails.
-        """
-
-        return None
+        return AuthData(identifier=validated_token.pop("sub"), data=validated_token)

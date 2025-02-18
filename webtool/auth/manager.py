@@ -69,14 +69,14 @@ class JWTManager(BaseJWTManager):
     JWT manager for encoding and decoding JSON Web Tokens.
     """
 
-    def __init__(self):
-        self.jwt = pyjwt.PyJWT(self._get_default_options())
+    def __init__(self, options: dict[str, bool | list[str]] | None = None):
+        self.jwt = pyjwt.PyJWT(options or self._get_default_options())
 
     @staticmethod
     def _get_default_options() -> dict[str, bool | list[str]]:
         return {
             "verify_signature": True,
-            "verify_exp": False,
+            "verify_exp": True,
             "verify_nbf": True,
             "verify_iat": True,
             "verify_aud": True,
@@ -113,6 +113,7 @@ class JWTManager(BaseJWTManager):
         algorithm: str,
         at_hash: Optional[str] = None,
         raise_error: bool = False,
+        options: dict[str, bool | list[str]] | None = None,
     ) -> dict | None:
         """
         Decodes a JSON Web Token (JWT) and returns the claims if valid.
@@ -123,13 +124,14 @@ class JWTManager(BaseJWTManager):
             algorithm: The signing algorithm used for verification JWT, defaults to 'ES384'.
             at_hash: Optional parameter for additional handling of access tokens.
             raise_error: Optional parameter for additional handling of error messages.
+            options: Optional parameters for additional handling of additional errors.
 
         Returns:
             dict: A dictionary containing the claims if the token is valid, or None if the token is invalid or expired.
         """
 
         try:
-            res = self.jwt.decode(token, secret_key, algorithms=[algorithm])
+            res = self.jwt.decode(token, secret_key, algorithms=[algorithm], options=options)
 
             if at_hash and res.get("at_hash") != at_hash:
                 raise ValueError("Invalid token")

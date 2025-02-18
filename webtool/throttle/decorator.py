@@ -1,6 +1,7 @@
 from collections import deque
-from typing import Any, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
+from webtool.auth.models import AuthData
 from webtool.utils.hash import sha256
 
 THROTTLE_RULE_ATTR_NAME = "_throttle_rules"
@@ -50,7 +51,7 @@ def limiter(
     Decorator for implementing rate limiting on functions.
 
     Parameters:
-        max_requests: Maximum number of requests allowed in the interval
+        max_requests: Maximum number of requests allowed in the interval.
         interval: Time interval in seconds (default: 3600)
         throttle_key: Custom key for the rate limit (default: function path)
         method: List of HTTP methods to apply limit to (optional)
@@ -143,42 +144,38 @@ class LimitRule:
         String representation of the rule showing its configuration
         """
 
-        return (
-            f"{self.max_requests} / {self.interval} "
-            f"{self.throttle_key:.20s}... {self.method} {self.scopes} "
-            f"for {'user' if self.for_user else 'anno' if self.for_anno else ''}"
-        )
+        return f"{self.max_requests} / {self.interval} " f"{self.throttle_key:.20s}... {self.method} {self.scopes} "
 
     def is_enabled(
         self,
         scope: dict,
-        anno_identifier: Any | None = None,
-        user_identifier: Any | None = None,
-        auth_scope: list[str] | None = None,
+        is_user: bool,
+        auth_data: AuthData,
     ) -> bool:
         """
         Checks if this rule should be applied based on request context.
 
         Parameters:
             scope: ASGI request scope
-            anno_identifier: Anonymous user identifier
-            user_identifier: Authenticated user identifier (optional)
-            auth_scope: List of user scopes this rule applies to
+            is_user: True if user, False unauthorized
+            auth_data: webtool.auth.models.AuthData
 
         Returns:
             bool: indicating if rule should be applied
         """
 
-        if self.method and scope.get("method") not in self.method:
+        scopes = auth_data.data.get("scope") if auth_data.data else []
+
+        if self.method and (scope.get("method") not in self.method):
             return False
 
-        if not self.scopes or (auth_scope and set(auth_scope) & self.scopes):
-            if user_identifier and self.for_user:
-                return True
-            elif anno_identifier and self.for_anno:
-                return True
+        if self.scopes and not self.scopes.intersection(set(scopes)):
+            return False
 
-        return False
+        if is_user:
+            return self.for_user
+
+        return self.for_anno
 
 
 class LimitRuleManager:
@@ -195,24 +192,22 @@ class LimitRuleManager:
     def should_limit(
         self,
         scope: dict,
-        anno_identifier: Any | None = None,
-        user_identifier: Any | None = None,
-        auth_scope: list[str] | None = None,
+        is_user: bool,
+        auth_data: AuthData,
     ) -> list[LimitRule]:
         """
         Determines which rules should be applied for a given request.
 
         Parameters:
             scope: ASGI request scope
-            anno_identifier: Anonymous user identifier (optional)
-            user_identifier: Authenticated user identifier (optional)
-            auth_scope: List of user scopes this rule applies to
+            is_user: True if user, False unauthorized
+            auth_data: webtool.auth.models.AuthData
 
         Returns:
             List of applicable rules
         """
 
-        rules = [rule for rule in self.rules if rule.is_enabled(scope, anno_identifier, user_identifier, auth_scope)]
+        rules = [rule for rule in self.rules if rule.is_enabled(scope, is_user, auth_data)]
 
         return rules
 

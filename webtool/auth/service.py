@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional
 
 from webtool.auth.manager import BaseJWTManager, JWTManager
-from webtool.auth.models import PayloadFactory, PayloadType
+from webtool.auth.models import PayloadFactory, PayloadT
 from webtool.cache.client import BaseCache, RedisCache
 from webtool.utils.json import ORJSONDecoder, ORJSONEncoder
 from webtool.utils.key import load_key
 
 
-class BaseJWTService(Generic[PayloadType], ABC):
+class BaseJWTService(Generic[PayloadT], ABC):
     @abstractmethod
     async def create_token(self, data: dict) -> tuple[str, str]:
         """
@@ -24,13 +24,17 @@ class BaseJWTService(Generic[PayloadType], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def validate_access_token(self, access_token: str, validate_exp: bool = True) -> Optional[PayloadType]:
+    async def validate_access_token(
+        self,
+        access_token: str,
+        options: dict[str, bool | list[str]] | None = None,
+    ) -> Optional[PayloadT]:
         """
         Validate Access Token.
 
         Parameters:
             access_token: Access Token.
-            validate_exp: Whether to validate expiration or not.
+            options: Optional parameters for additional handling of additional errors.
 
         Returns:
             PayloadType: Access Token Data
@@ -38,13 +42,17 @@ class BaseJWTService(Generic[PayloadType], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def validate_refresh_token(self, refresh_token: str, validate_exp: bool = True) -> Optional[PayloadType]:
+    async def validate_refresh_token(
+        self,
+        refresh_token: str,
+        options: dict[str, bool | list[str]] | None = None,
+    ) -> Optional[PayloadT]:
         """
         Validate Refresh Token.
 
         Parameters:
             refresh_token: Access Token.
-            validate_exp: Whether to validate expiration or not.
+            options: Optional parameters for additional handling of additional errors.
 
         Returns:
             PayloadType: Refresh Token Data
@@ -79,7 +87,7 @@ class BaseJWTService(Generic[PayloadType], ABC):
         raise NotImplementedError
 
 
-class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadType]):
+class JWTService(BaseJWTService[PayloadT], PayloadFactory, Generic[PayloadT]):
     """
     generate access token, refresh token
 
@@ -145,35 +153,45 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
             return self._jwt_manager.encode(data, self._private_key, self.algorithm)
         return self._jwt_manager.encode(data, self._secret_key, self.algorithm)
 
-    def _decode_token(self, token: str, at_hash: str | None = None) -> Optional[PayloadType]:
+    def _decode_token(
+        self,
+        token: str,
+        at_hash: str | None = None,
+        options: dict[str, bool | list[str]] | None = None,
+    ) -> Optional[PayloadT]:
         if self._public_key:
-            return self._jwt_manager.decode(token, self._public_key, self.algorithm, at_hash)
-        return self._jwt_manager.decode(token, self._secret_key, self.algorithm, at_hash)
+            return self._jwt_manager.decode(
+                token,
+                self._public_key,
+                self.algorithm,
+                at_hash=at_hash,
+                options=options,
+            )
+        return self._jwt_manager.decode(
+            token,
+            self._secret_key,
+            self.algorithm,
+            at_hash=at_hash,
+            options=options,
+        )
 
-    async def _save_refresh_data(self, access_data: PayloadType, refresh_data: PayloadType) -> None:
+    async def _save_refresh_token(self, access_data: PayloadT, refresh_data: PayloadT) -> None:
         access_jti = self._get_jti(access_data)
-
-        key = self._get_key(JWTService._CACHE_TOKEN_PREFIX, refresh_data)
-        val = self._get_extra(refresh_data)
-        val["access_jti"] = access_jti
-        val = self._json_encoder.encode(val)
+        key = self._get_key(self._CACHE_TOKEN_PREFIX, refresh_data)
+        val = self._json_encoder.encode(refresh_data | {"access_jti": access_jti})
 
         async with self._cache.lock(key, 100):
             await self._cache.set(key, val, ex=self.refresh_token_expire_time)
 
-    async def _read_refresh_data(self, refresh_data: PayloadType) -> dict | None:
-        key = self._get_key(JWTService._CACHE_TOKEN_PREFIX, refresh_data)
-
+    async def _read_refresh_token(self, refresh_data: PayloadT) -> dict | None:
+        key = self._get_key(self._CACHE_TOKEN_PREFIX, refresh_data)
         async with self._cache.lock(key, 100):
             val = await self._cache.get(key)
 
-        if val:
-            val = self._json_decoder.decode(val)
+        return self._json_decoder.decode(val) if val else val
 
-        return val
-
-    async def _invalidate_token_data(self, validated_refresh_data: PayloadType) -> None:
-        key = self._get_key(JWTService._CACHE_TOKEN_PREFIX, validated_refresh_data)
+    async def _invalidate_refresh_token(self, validated_refresh_data: PayloadT) -> None:
+        key = self._get_key(self._CACHE_TOKEN_PREFIX, validated_refresh_data)
         await self._cache.delete(key)
 
     async def create_token(self, data: dict) -> tuple[str, str]:
@@ -193,55 +211,60 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
 
         access_token = self._create_token(access_data)
         refresh_token = self._create_token(refresh_data)
-        await self._save_refresh_data(access_data, refresh_data)
+        await self._save_refresh_token(access_data, refresh_data)
 
         return access_token, refresh_token
 
-    async def validate_access_token(self, access_token: str, validate_exp: bool = True) -> Optional[PayloadType]:
+    async def validate_access_token(
+        self,
+        access_token: str,
+        options: dict[str, bool | list[str]] | None = None,
+    ) -> Optional[PayloadT]:
         """
         Validate Access Token.
 
         Parameters:
             access_token: Access Token.
-            validate_exp: Whether to validate expiration or not.
+            options: Optional parameters for additional handling of additional errors.
 
         Returns:
             Optional[PayloadType]: Access Token Data
         """
-        access_data = self._decode_token(access_token)
+        access_data = self._decode_token(access_token, options=options)
 
         if not access_data:
             return None
 
-        if validate_exp and not self._validate_exp(access_data):
-            return None
-
         return access_data
 
-    async def validate_refresh_token(self, refresh_token: str, validate_exp: bool = True) -> Optional[PayloadType]:
+    async def validate_refresh_token(
+        self,
+        refresh_token: str,
+        options: dict[str, bool | list[str]] | None = None,
+    ) -> Optional[PayloadT]:
         """
         Validate Refresh Token.
 
         Parameters:
             refresh_token: Access Token.
-            validate_exp: Whether to validate expiration or not.
+            options: Optional parameters for additional handling of additional errors.
 
         Returns:
             Optional[PayloadType]: Refresh Token Data
         """
-        refresh_data = self._decode_token(refresh_token)
+        refresh_data = self._decode_token(refresh_token, options=options)
 
         if not refresh_data:
             return None
 
-        if validate_exp and not self._validate_exp(refresh_data):
-            return None
-
-        cached_refresh_data = await self._read_refresh_data(refresh_data)
+        cached_refresh_data = await self._read_refresh_token(refresh_data)
         if not cached_refresh_data:
             return None
 
-        refresh_data["extra"] |= cached_refresh_data
+        cached_refresh_data.pop("access_jti")
+        if cached_refresh_data != refresh_data:
+            return None
+
         return refresh_data
 
     async def invalidate_token(self, refresh_token: str) -> bool:
@@ -259,7 +282,7 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
         if not refresh_data:
             return False
 
-        await self._invalidate_token_data(refresh_data)
+        await self._invalidate_refresh_token(refresh_data)
         return True
 
     async def update_token(self, data: dict, refresh_token: str) -> tuple[str, str] | None:
@@ -283,7 +306,7 @@ class JWTService(BaseJWTService[PayloadType], PayloadFactory, Generic[PayloadTyp
         return new_access_token, new_refresh_token
 
 
-class RedisJWTService(JWTService, Generic[PayloadType]):
+class RedisJWTService(JWTService, Generic[PayloadT]):
     """
     generate access token, refresh token
 
@@ -306,13 +329,12 @@ class RedisJWTService(JWTService, Generic[PayloadType]):
     local refresh_exp = refresh_token['exp']
     local refresh_sub = refresh_token['sub']
     local refresh_jti = refresh_token['jti']
-    local refresh_val = refresh_token['extra']
         
     -- SAVE REFRESH TOKEN FOR VALIDATION
     local key = "jwt_" .. refresh_jti
-    refresh_val['access_jti'] = access_jti
-    refresh_val = cjson.encode(refresh_val)
-    redis.call('SET', key, refresh_val, 'EXAT', math.floor(refresh_exp))
+    refresh_token['access_jti'] = access_jti
+    refresh_token = cjson.encode(refresh_token)
+    redis.call('SET', key, refresh_token, 'EXAT', math.floor(refresh_exp))
         
     -- SAVE REFRESH TOKEN FOR SEARCH
     key = "jwt_sub_" .. refresh_sub
@@ -360,7 +382,7 @@ class RedisJWTService(JWTService, Generic[PayloadType]):
     else
     
         -- INVALIDATE ORIGINAL ACCESS, REFRESH TOKEN
-        access_jti = refresh_token['extra']['access_jti']
+        access_jti = refresh_token['access_jti']
         refresh_to_invalidate_issue_time = refresh_token['exp'] - refresh_token_expire_time
     end
     
@@ -408,7 +430,7 @@ class RedisJWTService(JWTService, Generic[PayloadType]):
         self._invalidate_script = self._cache.cache.register_script(RedisJWTService._LUA_INVALIDATE_TOKEN_SCRIPT)
         self._search_script = self._cache.cache.register_script(RedisJWTService._LUA_SEARCH_TOKEN_SCRIPT)
 
-    async def _save_refresh_data(self, access_data: PayloadType, refresh_data: PayloadType) -> None:
+    async def _save_refresh_data(self, access_data: PayloadT, refresh_data: PayloadT) -> None:
         access_jti = self._get_jti(access_data)
         refresh_jti = self._get_jti(refresh_data)
         refresh_json = self._json_encoder.encode(refresh_data)
@@ -425,7 +447,7 @@ class RedisJWTService(JWTService, Generic[PayloadType]):
 
     async def _invalidate_token_data(
         self,
-        validated_refresh_data: PayloadType,
+        validated_refresh_data: PayloadT,
         refresh_jti_to_invalidate: str | None = None,
     ) -> bool:
         refresh_json = self._json_encoder.encode(validated_refresh_data)
