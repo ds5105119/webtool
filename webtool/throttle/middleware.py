@@ -107,7 +107,7 @@ class LimitMiddleware:
 
         try:
             auth_data = await self.auth_backend.authenticate(scope)
-        except ValueError as e:
+        except ValueError:
             pass
         else:
             scope["auth"] = auth_data.data
@@ -116,7 +116,7 @@ class LimitMiddleware:
 
         try:
             auth_data = await self.anno_backend.authenticate(scope)
-        except ValueError as e:
+        except ValueError:
             return await self.anno_backend.verify_identity(scope, send)
         else:
             rules = manager.should_limit(scope, is_user=False, auth_data=auth_data)
