@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
-from keycloak import KeycloakOpenIDConnection
+from keycloak import KeycloakOpenID
 
 from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
@@ -309,11 +309,11 @@ class JWTBackend(BaseBackend):
 
 
 class KeycloakBackend(BaseBackend):
-    def __init__(self, keycloak_connection: KeycloakOpenIDConnection):
+    def __init__(self, keycloak_connection: KeycloakOpenID):
         self.keycloak_connection = keycloak_connection
 
     async def authenticate(self, scope: dict) -> AuthData:
         scheme, param = _get_access_token(scope)
-        validated_token = self.keycloak_connection.keycloak_openid.decode_token(param.decode())
+        userinfo = await self.keycloak_connection.a_userinfo(param.decode())
 
-        return AuthData(identifier=validated_token.pop("sub"), data=validated_token)
+        return AuthData(identifier=userinfo.pop("sub"), data=userinfo)
