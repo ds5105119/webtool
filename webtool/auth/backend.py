@@ -316,4 +316,4 @@ class KeycloakBackend(BaseBackend):
         scheme, param = _get_access_token(scope)
         userinfo = await self.keycloak_connection.a_userinfo(param.decode())
 
-        return AuthData(identifier=userinfo.pop("sub"), data=userinfo)
+        return AuthData(identifier=userinfo.get("sub"), data=userinfo)
