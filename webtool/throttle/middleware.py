@@ -101,15 +101,12 @@ class LimitMiddleware:
 
         try:
             auth_data = await self.auth_backend.authenticate(scope)
-        except ValueError:
-            pass
-        else:
             scope["auth"] = auth_data.data
-
-        try:
-            auth_data = await self.anno_backend.authenticate(scope)
         except ValueError:
-            return await self.anno_backend.verify_identity(scope, send)
+            try:
+                auth_data = await self.anno_backend.authenticate(scope)
+            except ValueError:
+                return await self.anno_backend.verify_identity(scope, send)
 
         # find limit rule manager
         handler = _find_closure_rules_function(handler)
