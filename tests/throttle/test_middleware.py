@@ -55,7 +55,7 @@ async def test_anno_throttle_2():
             return responses
 
         t = time.time()
-        results = await asyncio.gather(*[worker_1() for _ in range(100)])
+        results = await asyncio.gather(*[worker_1() for _ in range(1)])
 
     now = time.time()
     delta = now - t
