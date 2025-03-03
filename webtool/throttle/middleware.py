@@ -99,16 +99,18 @@ class LimitMiddleware:
         if handler is None:
             return await self.app(scope, receive, send)
 
+        is_user = False
+
         try:
             auth_data = await self.auth_backend.authenticate(scope)
-            is_user = True
             scope["auth"] = auth_data.data
+            is_user = True
         except ValueError:
             try:
                 auth_data = await self.anno_backend.authenticate(scope)
-                is_user = False
             except ValueError:
-                return await self.anno_backend.verify_identity(scope, send)
+                send = await self.anno_backend.verify_identity(scope, send)
+                return await self.app(scope, receive, send)
 
         # find limit rule manager
         handler = _find_closure_rules_function(handler)
@@ -117,6 +119,9 @@ class LimitMiddleware:
 
         # Apply limit rules
         manager: LimitRuleManager = getattr(handler, THROTTLE_RULE_ATTR_NAME)
+        if manager is None:
+            return await self.app(scope, receive, send)
+
         rules = manager.should_limit(scope, is_user=is_user, auth_data=auth_data)
         return await self.apply(scope, receive, send, auth_data.identifier, rules)
 

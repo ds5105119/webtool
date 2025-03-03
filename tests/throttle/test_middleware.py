@@ -32,7 +32,7 @@ async def test_anno_throttle_1():
 
     for response_set in results:
         assert len(response_set) == 6
-        assert response_set[0].status_code == 307
+        assert response_set[0].status_code == 200
         assert response_set[1].status_code == 200
         assert response_set[2].status_code == 200
         assert response_set[3].status_code == 200
@@ -63,7 +63,7 @@ async def test_anno_throttle_2():
 
     for response_set in results:
         assert len(response_set) == 4
-        assert response_set[0].status_code == 307
+        assert response_set[0].status_code == 200
         assert response_set[1].status_code == 200
         assert response_set[2].status_code == 200
         assert response_set[3].status_code == 429
@@ -153,6 +153,5 @@ async def test_auth_throttle_4(jwt_service):
             assert all(response.status_code == 200 for response in response_set)
         elif tasks[i] == 2:
             assert len(response_set) == 4
-            assert response_set[0].status_code == 307
-            assert all(response.status_code == 200 for response in response_set[1:-1])
+            assert all(response.status_code == 200 for response in response_set[:-1])
             assert response_set[-1].status_code == 429

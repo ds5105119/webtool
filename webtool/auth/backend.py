@@ -235,7 +235,7 @@ class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
         if secure:
             self.security_flags += " secure;"
 
-    async def verify_identity(self, scope: dict, send: Callable) -> None:
+    async def verify_identity(self, scope: dict, send: Callable):
         """
         Assigns new session to anonymous users and redirects.
 
@@ -244,20 +244,28 @@ class AnnoSessionBackend(SessionBackend, BaseAnnoBackend):
             send: ASGI send function
         """
 
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 307,
-                "headers": [
-                    (b"location", scope["path"].encode()),
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = message.get("headers", [])
+
+                cookie = _get_header_value(headers, b"cookie")
+                if cookie is not None:
+                    session = _get_cookie_value(cookie, self.session_name.encode())
+                    if session is not None:
+                        return await send(message)
+
+                headers.append(
                     (
-                        b"Set-Cookie",
+                        b"set-cookie",
                         f"{self.session_name}={self.session_factory().hex}; path=/; {self.security_flags}".encode(),
-                    ),
-                ],
-            }
-        )
-        await send({"type": "http.response.body", "body": b""})
+                    )
+                )
+
+                message["headers"] = headers
+
+            await send(message)
+
+        return send_wrapper
 
 
 class JWTBackend(BaseBackend):
