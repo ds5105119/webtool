@@ -323,5 +323,6 @@ class KeycloakBackend(BaseBackend):
     async def authenticate(self, scope: dict) -> AuthData:
         scheme, param = _get_access_token(scope)
         userinfo = await self.keycloak_connection.a_userinfo(param.decode())
+        userinfo.setdefault("access_token", param.decode())
 
         return AuthData(identifier=userinfo.get("sub"), data=userinfo)
