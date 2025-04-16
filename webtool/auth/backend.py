@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
-from keycloak import KeycloakOpenID
+from keycloak import KeycloakOpenID, KeycloakAuthenticationError
 
 from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
@@ -322,7 +322,12 @@ class KeycloakBackend(BaseBackend):
 
     async def authenticate(self, scope: dict) -> AuthData:
         scheme, param = _get_access_token(scope)
-        userinfo = await self.keycloak_connection.a_userinfo(param.decode())
+
+        try:
+            userinfo = await self.keycloak_connection.a_userinfo(param.decode())
+        except KeycloakAuthenticationError:
+            raise ValueError("Authentication Failed")
+
         userinfo.setdefault("access_token", param.decode())
 
         return AuthData(identifier=userinfo.get("sub"), data=userinfo)
