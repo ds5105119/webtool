@@ -31,7 +31,7 @@ class RedisLimiter(BaseLimiter):
     _LUA_LIMITER_SCRIPT = """
     -- Retrieve arguments
     -- ruleset = {key: [limit, window_size], ...}
-    -- return = {key: [limit, current], ...}
+    -- return = {key: [limit, current, exist first request], ...}
     local now = tonumber(ARGV[1])
     local ruleset = cjson.decode(ARGV[2])
 
@@ -51,7 +51,7 @@ class RedisLimiter(BaseLimiter):
         -- Step 4: Set the TTL for the key
         redis.call("EXPIRE", key, ruleset[key][2])
         ruleset[key][2] = amount
-        ruleset[key][3] = redis.call("ZRANGE", key, -1, -1)[1]
+        ruleset[key][3] = redis.call("ZREVRANGE", key, 0, 0)[1]
     end
 
     return cjson.encode(ruleset)
@@ -103,7 +103,7 @@ class RedisLimiter(BaseLimiter):
 
         return result
 
-    async def is_deny(self, identifier: str, rules: list[LimitRule]) -> list[float]:
+    async def is_deny(self, identifier: str, rules: list[LimitRule]) -> list[tuple[int, int, float]]:
         """
         Checks if any rate limits are exceeded.
 
@@ -112,13 +112,13 @@ class RedisLimiter(BaseLimiter):
             rules: List of rate limit rules to check
 
         Returns:
-            list[float]: List of waiting times until rate limits reset (empty if not exceeded)
+            list[int, int, float]: List of (Limit Amount, Current, Time until rate limit reset (in seconds))
         """
 
-        ruleset = self._get_ruleset(identifier, rules)
+        ruleset = self._get_ruleset(identifier, rules)  # ruleset = {key: [limit, window_size], ...}
+        result = await self._get_limits(ruleset)  # {key: [limit, amount, exist first request], ...}
 
-        result = await self._get_limits(ruleset)
         now = asyncio.get_running_loop().time()
-        deny = [float(val[2]) + ruleset[key][1] - now for key, val in result.items() if val[0] < val[1]]
+        deny = [(val[0], val[1], float(val[2]) + ruleset[key][1] - now) for key, val in result.items()]
 
         return deny

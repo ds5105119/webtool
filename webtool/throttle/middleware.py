@@ -30,23 +30,24 @@ def _find_route_handler(routes: Iterable[BaseRoute], scope) -> Optional[Callable
     return None
 
 
-async def _default_callback(scope, send, expire: int):
+async def _default_callback(scope, send, deny: list[tuple[int, int, float]]):
     """
     Default callback function for rate limit exceeded response.
     Returns a 429 status code with Retry-After header.
 
     :param scope: ASGI request scope
     :param send: ASGI send function
-    :param expire: Time until rate limit reset (in seconds)
+    :param deny: List of (Limit Amount, Current, Time until rate limit reset (in seconds))
     """
-
     await send(
         {
             "type": "http.response.start",
             "status": 429,
             "headers": [
                 (b"location", scope["path"].encode()),
-                (b"Retry-After", str(expire).encode()),
+                (b"Retry-After", str(deny[-1][2]).encode()),
+                (b"x-ratelimit-limit", str(deny[-1][1]).encode()),
+                (b"x-ratelimit-remaining", str(deny[-1][0] - deny[-1][1]).encode()),
             ],
         }
     )
@@ -140,7 +141,23 @@ class LimitMiddleware:
 
         if rules:
             deny = await self.limiter.is_deny(identifier, rules)
-            if deny:
-                return await _default_callback(scope, send, int(max(deny)))
+            deny.sort(key=lambda limit: limit[2])
+
+            if any(s[0] < s[1] for s in deny):
+                return await _default_callback(scope, send, deny)
+
+            async def send_wrapper(message):
+                if message["type"] == "http.response.start":
+                    headers = message.setdefault("headers", [])
+                    headers.extend(
+                        [
+                            (b"Retry-After", str(deny[-1][2]).encode()),
+                            (b"x-ratelimit-limit", str(deny[-1][1]).encode()),
+                            (b"x-ratelimit-remaining", str(deny[-1][0] - deny[-1][1]).encode()),
+                        ]
+                    )
+                await send(message)
+
+            return await self.app(scope, receive, send_wrapper)
 
         return await self.app(scope, receive, send)
