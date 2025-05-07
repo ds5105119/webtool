@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
-from keycloak import KeycloakAuthenticationError, KeycloakOpenID
+from keycloak import KeycloakAuthenticationError, KeycloakGetError, KeycloakOpenID
 
 from webtool.auth.models import AuthData, Payload
 from webtool.auth.service import BaseJWTService
@@ -325,7 +325,7 @@ class KeycloakBackend(BaseBackend):
 
         try:
             userinfo = await self.keycloak_connection.a_userinfo(param.decode())
-        except KeycloakAuthenticationError:
+        except (KeycloakAuthenticationError, KeycloakGetError):
             raise ValueError("Authentication Failed")
 
         userinfo.setdefault("access_token", param.decode())
