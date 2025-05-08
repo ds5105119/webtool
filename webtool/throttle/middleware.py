@@ -48,6 +48,10 @@ async def _default_callback(scope, send, deny: list[tuple[int, int, float]]):
                 (b"Retry-After", str(deny[-1][2]).encode()),
                 (b"x-ratelimit-limit", str(deny[-1][1]).encode()),
                 (b"x-ratelimit-remaining", str(deny[-1][0] - deny[-1][1]).encode()),
+                (
+                    b"access-control-expose-headers",
+                    b"location, x-ratelimit-limit, x-ratelimit-remaining, retry-after",
+                ),
             ],
         }
     )
@@ -154,6 +158,10 @@ class LimitMiddleware:
                             (b"Retry-After", str(deny[-1][2]).encode()),
                             (b"x-ratelimit-limit", str(deny[-1][1]).encode()),
                             (b"x-ratelimit-remaining", str(deny[-1][0] - deny[-1][1]).encode()),
+                            (
+                                b"access-control-expose-headers",
+                                b"x-ratelimit-limit, x-ratelimit-remaining, retry-after",
+                            ),
                         ]
                     )
                 await send(message)
