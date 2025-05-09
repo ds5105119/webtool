@@ -324,7 +324,7 @@ class KeycloakBackend(BaseBackend):
         scheme, param = _get_access_token(scope)
 
         try:
-            tokeninfo = await self.keycloak_connection.a_decode_token(param.decode())
+            tokeninfo = await self.keycloak_connection.a_introspect(param.decode())
         except (KeycloakAuthenticationError, KeycloakGetError):
             raise ValueError("Authentication Failed")
 
