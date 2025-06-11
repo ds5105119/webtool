@@ -328,6 +328,9 @@ class KeycloakBackend(BaseBackend):
         except (KeycloakAuthenticationError, KeycloakGetError):
             raise ValueError("Authentication Failed")
 
+        if not tokeninfo or not tokeninfo.get("sub"):
+            raise ValueError("Authentication Failed")
+
         tokeninfo.setdefault("access_token", param.decode())
 
         return AuthData(identifier=tokeninfo.get("sub"), data=tokeninfo)
