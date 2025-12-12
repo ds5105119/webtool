@@ -54,7 +54,7 @@ jobs:
       run: |
         poetry run coverage report
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v5
       with:
         key: mkdocs-material-${{ env.cache_id }}
         path: .cache
